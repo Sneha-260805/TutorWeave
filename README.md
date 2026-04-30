@@ -21,7 +21,7 @@ The main goal is to demonstrate a full learning loop:
 - Per-user learner profile persistence with SQLite
 - Difficulty classification into beginner, intermediate, and advanced levels
 - Topic detection from learner questions
-- Dataset-backed example retrieval from `eduagent_dataset.csv`
+- Dataset-backed example retrieval from `datasets/eduagent_dataset.csv`
 - Groq-powered Tutor Agent for level-aware explanations
 - Evaluator Agent for follow-up questions and understanding checks
 - Shared LLM client with timeout, retry, and fallback behavior
@@ -173,8 +173,12 @@ EduAgent/
     profile_repository.py
   config/
     settings.py
-  evaluate_pipeline_quality.py
-  eduagent_dataset.csv
+  datasets/
+    eduagent_dataset.csv
+    eduagent_training_ready.csv
+    graph1_levels.png
+    graph2_topics.png
+    graph3_lengths.png
   difficulty_classifier/
   requirements.txt
 ```
@@ -343,7 +347,7 @@ Dataset retrieval layer.
 
 Responsibilities:
 
-- Loads `eduagent_dataset.csv`
+- Loads `datasets/eduagent_dataset.csv`
 - Filters by predicted level and detected topic
 - Builds and reuses cached TF-IDF retrieval indexes by level/topic
 - Ranks examples by relevance
@@ -454,7 +458,7 @@ EduAgent detects the topic from the learner question.
 
 ### 5. Retrieval
 
-Relevant examples are retrieved from `eduagent_dataset.csv`.
+Relevant examples are retrieved from `datasets/eduagent_dataset.csv`.
 
 ### 6. Tutoring
 
@@ -501,7 +505,7 @@ The UI refreshes:
 
 ## Dataset Requirements
 
-EduAgent expects `eduagent_dataset.csv` in the project root.
+EduAgent expects `datasets/eduagent_dataset.csv` in the datasets folder.
 
 Required columns:
 
@@ -648,7 +652,7 @@ Make sure `.env` exists or set the variable in the current shell.
 
 ### Dataset Not Found
 
-Make sure `eduagent_dataset.csv` is in the project root.
+Make sure `datasets/eduagent_dataset.csv` exists in the datasets folder.
 
 ### Classifier Files Not Found
 
