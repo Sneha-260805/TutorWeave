@@ -12,6 +12,7 @@ __pycache__/
 .env
 eduagent.db
 
-# Track dataset files
+# Track dataset files and graphs
 !datasets/
 !datasets/*.csv
+!datasets/*.png
