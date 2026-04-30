@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load dataset
-df = pd.read_csv('eduagent_dataset.csv')
+df = pd.read_csv('datasets/eduagent_dataset.csv')
 
 print("=== BASIC INFO ===")
 print(df.head())

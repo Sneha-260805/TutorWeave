@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Load dataset
-df = pd.read_csv("eduagent_dataset.csv")
+df = pd.read_csv("datasets/eduagent_dataset.csv")
 
 print("=== Original Dataset Info ===")
 print("Columns:", df.columns.tolist())
@@ -44,6 +44,6 @@ print("\nSample rows:")
 print(df.head())
 
 # Save cleaned training file
-df.to_csv("eduagent_training_ready.csv", index=False)
+df.to_csv("datasets/eduagent_training_ready.csv", index=False)
 
-print("\nSaved cleaned file as: eduagent_training_ready.csv")
+print("\nSaved cleaned file as: datasets/eduagent_training_ready.csv")

@@ -9,6 +9,9 @@ difficulty_classifier/
 *.tfevents.*
 __pycache__/
 *.pyc
-*.csv
 .env
 eduagent.db
+
+# Track dataset files
+!datasets/
+!datasets/*.csv
