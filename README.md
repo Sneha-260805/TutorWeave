@@ -1,117 +1,67 @@
 # EduAgent
 
-EduAgent is an adaptive AI tutor for AI/ML learning. It is designed as a complete academic showcase project, not just a simple chatbot. The app combines authentication, difficulty classification, semantic retrieval, topic detection, a multi-mode tutor agent, follow-up evaluation, learner memory with mastery tracking, progress charts, and a polished dark Gradio dashboard.
+EduAgent is an adaptive AI tutor for AI/ML learning, built as a complete course project showcasing a full personalization loop. It combines fine-tuned difficulty classification, two-pass personalized RAG, semantic topic detection, a multi-mode tutor agent, Pydantic-validated evaluation, and mastery-based learner memory — all wired into a polished dark Gradio dashboard.
 
-The main goal is to demonstrate a full adaptive learning loop:
+The adaptive loop:
 
 1. A learner asks an AI/ML question.
-2. EduAgent predicts the learner's difficulty level (fine-tuned DistilBERT).
-3. EduAgent detects the topic and retrieves semantically relevant dataset examples.
-4. The Memory Agent reads the learner's mastery, weak areas, and prior explanation styles.
-5. The Tutor Agent selects a teaching mode and explains the concept adaptively.
-6. The Evaluator Agent asks a follow-up question.
-7. The learner answers the follow-up.
-8. The Memory Agent updates mastery, weak areas, topic history, and used-explanation tags.
-9. The dashboard updates the learner profile and charts.
+2. Fine-tuned DistilBERT predicts difficulty level (97.92% test accuracy).
+3. Semantic topic detection maps the question to the closest dataset topic.
+4. Two-pass RAG retrieves grounding examples: Pass 1 (query-driven, top-3) + Pass 2 (weak-area targeted, top-2).
+5. The Memory Agent builds a personalized hint from mastery scores, weak areas, and prior explanation styles.
+6. The Tutor Agent selects a teaching mode and explains the concept adaptively.
+7. The Evaluator Agent asks a conceptual follow-up question.
+8. The learner answers; the Evaluator returns a Pydantic-validated `EvaluationResult`.
+9. The Memory Agent updates mastery (diminishing returns), weak areas, and used-explanation tags.
+10. The dashboard refreshes charts and learner insights.
+
+A full write-up of the system design, model details, and experimental results is in [`report.tex`](report.tex).
 
 ---
 
 ## Key Features
 
 - Login, signup, logout, and authenticated learner sessions
-- Email validation and PBKDF2-SHA256 password hashing on signup
+- Email validation and PBKDF2-SHA256 password hashing (200,000 PBKDF2 iterations, 16-byte `os.urandom` salt, `hmac.compare_digest` for timing safety)
 - Per-user learner profile persistence with SQLite (WAL journal mode)
-- Difficulty classification into beginner, intermediate, and advanced levels (fine-tuned DistilBERT)
+- **DistilBERT difficulty classifier** (`distilbert-base-uncased`, fine-tuned on 2,400 synthetic samples) — **97.92% test accuracy**, +35.8 pp over the keyword heuristic baseline
 - Keyword heuristic fallback classifier when the model directory is absent
-- Topic detection with alias expansion (e.g. `llm → large language models`)
-- **Semantic retrieval** using `sentence-transformers` (`all-MiniLM-L6-v2`) dense embeddings with TF-IDF fallback
-- Per `(level, topic)` index cache — questions encoded once, not on every query
-- **Four adaptive teaching modes**: remedial, clarification, advance, default — selected from mastery and last evaluation
+- **Two-tier semantic topic detection**: alias table fast path (handles abbreviations like `mlp`, `cnn`, `rag`, `lstm`) + `all-MiniLM-L6-v2` cosine similarity fallback
+- **Two-pass personalized RAG**:
+  - Pass 1 — query-driven top-3 from `(level, topic)` slice
+  - Pass 2 — weak-area targeted top-2 using composite query `"concept + topic"`, deduplicated against Pass 1
+- Per `(level, topic)` index cache — dataset encoded once, not on every query
+- **Four adaptive teaching modes**: `remedial`, `clarification`, `advance`, `default` — selected from evaluator hint (priority 1) or mastery + weak areas (priority 2)
 - `used_explanations` tracking per topic — prevents the LLM from repeating the same explanation style
-- Mastery scoring with **diminishing returns**: gains shrink as mastery approaches 1.0
-- Groq-powered Tutor Agent (`llama-3.3-70b-versatile`) for level-aware, mode-specific explanations
-- Evaluator Agent for follow-up questions and Pydantic-validated understanding checks
-- Shared LLM client with timeout, retry, and graceful local fallback
-- Memory Agent for learner state, weak areas, mastery, and recommendations
-- Dark theme Gradio UI designed for a project demo or professor presentation
-- Two-column workspace with a chat area and organized learner dashboard
-- Tabbed dashboard sections to avoid clutter
-- Matplotlib progress charts with dark theme styling
-- System Insights / Research panel for showing internal AI pipeline signals
-- **45 unit tests** across auth, memory, and profile layers (`tests/`)
-- **Personalization evaluation script** (`eval/run_evaluation.py`) with markdown report
+- **Diminishing-returns mastery model**: `m += 0.20 × (1 − m)` on good, `−0.06` on partial, `−0.18` on poor; initialized at 0.5, clamped to [0, 1]
+- Groq-powered Tutor Agent (`llama-3.3-70b-versatile`, temperature 0.25) for mode-specific explanations
+- Pydantic-validated `EvaluationResult` — `understanding_level: Literal["good","partial","poor"]`
+- Shared LLM client with timeout, retry (0.75 s / 1.5 s backoff, 3 attempts), and graceful local fallback
+- Dark theme Gradio UI with tabbed learner dashboard and Matplotlib progress charts
+- System Insights / Research panel for demo and professor-facing explainability
+- **49 unit tests** across auth, memory, and profile layers (`tests/`)
+- Personalization evaluation script (`eval/run_evaluation.py`) comparing baseline vs. personalized pipeline
 
 ---
 
-## Reliability and Architecture Improvements
+## Classifier Performance
 
-All earlier prototype weaknesses have been addressed:
+| Method | Test Accuracy |
+|--------|--------------|
+| Keyword heuristic (baseline) | 62.1% |
+| Fine-tuned DistilBERT (ours) | **97.92%** |
 
-- **Semantic retrieval replaces TF-IDF** for example lookup. `sentence-transformers` (`all-MiniLM-L6-v2`) dense embeddings are used as the primary backend. TF-IDF is retained as an automatic fallback if the package is absent.
-- **Classifier path corrected** to `models/distilbert_eduagent_v2/`. The old `difficulty_classifier/` placeholder path is no longer referenced.
-- **Beginner heuristic gated** to questions of ≤ 8 words — longer questions no longer get incorrectly downgraded.
-- **Mastery uses diminishing returns**: `mastery += 0.20 × (1 − mastery)` on a good evaluation, so mastery can no longer trivially reach 1.0.
-- **`used_explanations` now tracked**: `record_used_explanation` is called after every tutor response, tagging the topic with the `level-mode` key used (e.g. `intermediate-advance`). The memory hint surfaces these tags so the LLM avoids repeating the same approach.
-- **Teaching mode returned** from `generate_tutor_response` and wired into the memory system.
-- **`_pack()` output validation**: all Gradio handler return tuples are built from named dicts and validated against a key list at runtime — a mismatch raises `ValueError` immediately instead of silently routing values to wrong components.
-- **Auth improvements**: email validation on signup, auto tab-switch from Signup → Login on success, login identifier pre-filled with registered email.
-- **SQLite journal mode changed** from `MEMORY` to `WAL` — prevents database corruption on crash.
-- **MongoDB placeholder removed** — `pymongo` dependency and dead connection code fully deleted.
-- **Dead UI code removed** — the old `build_ui()` function (~120 lines) and module-level handler aliases were cleaned up.
-- **Unit tests added**: 45 tests across `tests/test_auth.py`, `tests/test_memory.py`, and `tests/test_profile.py`.
-
----
-
-## Current UI
-
-EduAgent uses a dark, presentation-ready Gradio interface.
-
-### Login Page
-
-- Dark academic showcase hero section
-- Login and signup tabs (auto-switches to Login on successful signup)
-- Clean authentication card
-- Project capability highlights
-
-### Chat Page
-
-Left column:
-
-- Tutor conversation
-- Main question input
-- Ask EduAgent button (shows "Thinking…" and disables during inference)
-- Clear Chat button
-
-Right column — tabbed learner dashboard:
-
-- `Overview` — detected level, topic, confidence, learner memory summary
-- `Evaluate` — follow-up question, answer input, evaluation result
-- `Progress` — Mastery by Topic, Topic Revisit Count, Weak Concept Count charts
-- `Research` — System Insights panel with internal pipeline signals and retrieved examples
-
----
-
-## System Insights
-
-Placed under the `Research` tab for demos and professor-facing explanations. Displays:
-
-- Predicted level and confidence scores
-- Detected topic
-- Memory hint used by the Tutor Agent (mastery, weak areas, used explanations)
-- Evaluator strategy hint and teaching mode selected
-- Last evaluation summary and JSON
-- Retrieved examples from the dataset
+Training set: 1,920 samples · Validation: 240 · Test: 240  
+Dataset: 2,400 balanced synthetic AI/ML Q&A pairs (800 per level)
 
 ---
 
 ## Architecture
 
-For a detailed agent flow diagram, component breakdown, design decisions, and honest limitations, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
-
 ```text
 EduAgent/
   gradio_app.py
-  ARCHITECTURE.md
+  report.tex                        ← conference-style research paper
   app/
     main.py
     ui.py
@@ -122,6 +72,7 @@ EduAgent/
     memory_agent.py
   ml/
     classifier.py
+    embedder.py                     ← shared all-MiniLM-L6-v2 singleton
     topic_detector.py
     retriever.py
   auth/
@@ -133,21 +84,23 @@ EduAgent/
   config/
     settings.py
   models/
-    distilbert_eduagent_v2/      ← fine-tuned DistilBERT classifier
+    distilbert_eduagent_v2/         ← fine-tuned DistilBERT classifier
   datasets/
     eduagent_dataset.csv
     eduagent_training_ready.csv
   eval/
-    run_evaluation.py            ← baseline vs. personalized comparison
-    evaluation_results.md        ← generated report
+    run_evaluation.py               ← baseline vs. personalized comparison
+    evaluation_results.md           ← generated report
   tests/
     test_auth.py
     test_memory.py
     test_profile.py
   runtime/
-    eduagent_app.db              ← SQLite database (WAL mode)
+    eduagent_app.db                 ← SQLite database (WAL mode)
   requirements.txt
 ```
+
+For a detailed agent flow, design decisions, ablation results, and limitations see [`report.tex`](report.tex).
 
 ---
 
@@ -155,111 +108,111 @@ EduAgent/
 
 ### `gradio_app.py`
 
-Imports `create_app()` from `app/main.py` and launches the Gradio app with custom CSS.
+Imports `create_app()` from `app/main.py` and launches Gradio with custom CSS.
 
 ### `app/ui.py`
 
-UI layout layer. Defines the custom dark CSS, login/signup page, two-column chat workspace, and all dashboard tab components. Contains no backend logic.
+UI layout layer — dark CSS, login/signup page, two-column chat workspace, and all dashboard tab components. No backend logic.
 
 ### `app/main.py`
 
 Orchestration and Gradio callback layer.
 
 - Initializes the database
-- Handles signup, login, and logout
+- Handles signup, login, logout
 - Handles main learner questions — calls Tutor Agent, records used explanation, updates profile
 - Calls Evaluator Agent on follow-up answers
 - Formats profile display, evaluation display, charts, and System Insights
-- Wires backend outputs into UI components via `_pack()` for validated tuple construction
+- Wires backend outputs into UI components via `_pack()` — validated at runtime, mismatches raise `ValueError` immediately
 
 ### `agents/llm_client.py`
 
-Shared LLM client. Calls Groq chat completions with timeout, retries, logging, and fallback text.
+Shared LLM client. Groq chat completions with `LLM_TIMEOUT_SECONDS=8.0`, `LLM_MAX_RETRIES=2` (3 total attempts), backoff at 0.75 s and 1.5 s, and a fallback string on persistent failure.
 
 ### `agents/tutor_agent.py`
 
 The Tutor Agent.
 
-- Predicts difficulty level, detects topic, retrieves semantic examples
-- Reads memory hints and evaluator strategy hints from the learner profile
+- Classifies question level, detects topic, runs two-pass RAG
+- Reads memory hint and evaluator strategy hint from the learner profile
 - Selects teaching mode (`remedial` / `clarification` / `advance` / `default`)
-- Assembles and fires the LLM prompt with mode-specific instructions
-- Returns `(level, confidence, topic, examples_df, answer, teaching_mode)`
+- Assembles LLM prompt with mode-specific instruction block (temperature 0.25)
+- Returns `(level, confidence, topic, examples_df, weak_examples_df, answer, teaching_mode)`
 
-Teaching mode is driven by mastery score, weak areas, and the evaluator's `recommended_action`. Each mode injects a different instruction block into the prompt, producing measurably different explanation styles.
+**Teaching modes:**
+
+| Mode | When triggered | Behaviour |
+|------|----------------|-----------|
+| `remedial` | Poor mastery (< 0.35) or evaluator recommends revisit | Simpler language, concrete real-world analogy, one key concept |
+| `clarification` | Partial mastery or evaluator detects confusion | Addresses known weak concepts directly, builds on what is known |
+| `advance` | High mastery (≥ 0.75) and no weak areas | Advanced edge cases, nuances, connections to related topics |
+| `default` | All other cases | Balanced level-appropriate explanation |
 
 ### `agents/evaluator_agent.py`
 
 The Evaluator Agent.
 
-- Generates one follow-up question after the tutor answer
-- Evaluates the learner's response
-- Validates evaluator JSON with Pydantic (`EvaluationResult` model)
-- Returns `understanding_level` (`good` / `partial` / `poor`), `weak_concepts`, `feedback`, `recommended_action`
+- Generates one follow-up question (temperature 0.2)
+- Evaluates learner response with Pydantic-validated `EvaluationResult` (temperature 0.0)
+- `_extract_json_object()` strips markdown fences and uses a `\{.*\}` DOTALL regex fallback
+- Safe fallback on parse failure: `understanding_level="partial"` (not `"poor"`) to avoid incorrectly triggering remedial mode
 
 ### `agents/memory_agent.py`
 
 The Memory Agent. Owns the learner profile schema and all mutations.
 
-- Normalizes profile shape on load (`ensure_profile_structure`)
-- Tracks sessions, questions asked, topics seen, topic counts, level history
-- Updates mastery with diminishing returns: `mastery += 0.20 × (1 − mastery)` on good; `−0.06` on partial; `−0.18` on poor
-- Records weak concepts per topic
-- Tracks `used_explanations` per topic to prevent repeated explanation styles
-- Builds memory hints and evaluator strategy hints for the tutor prompt
+- `ensure_profile_structure` normalizes profile shape on load
+- Mastery update with **diminishing returns**: `m += 0.20 × (1 − m)` on good; `m -= 0.06` on partial; `m -= 0.18` on poor; clamped to [0, 1]; initialized at 0.5
+- `record_used_explanation(topic, f"{level}-{mode}")` tags explanation style per topic
+- `build_memory_hint()` — up to 5 conditional sentences surfacing mastery, weak areas, used styles, topic history
+- `build_evaluation_strategy_hint()` — maps last `EvaluationResult` to a mode string + action addendum for the tutor
+
+### `ml/embedder.py`
+
+Shared singleton loader for `all-MiniLM-L6-v2`. Loaded once at import time; `semantic_available` flag used by both retriever and topic detector to choose backend.
 
 ### `ml/classifier.py`
 
 - Loads fine-tuned DistilBERT from `models/distilbert_eduagent_v2/`
-- Falls back to a keyword heuristic if the model directory is missing
+- Falls back to keyword heuristic if model directory is absent
 - Beginner-intent calibration applies only to questions of ≤ 8 words
-- Returns predicted level and confidence scores
 
 ### `ml/topic_detector.py`
 
-- Cleans and normalizes question text
-- Alias expansion table maps shortforms to full topic names
-- TF-IDF cosine similarity over dataset topic strings
-- Cached per-dataset index
+Two-tier topic detection:
+
+1. **Alias table** — space-padded exact substring match against 14 canonical topics and their abbreviations/synonyms (e.g. `mlp`, `ann`, `rag`, `lstm`, `sgd`). Authoritative — skips embedding step when matched.
+2. **Semantic similarity** — `all-MiniLM-L6-v2` encodes `"{topic}: {all questions for topic}"` per topic per level, cached per dataset snapshot. Cosine similarity ranks best match.
+3. TF-IDF fallback (ngram 1–2) if `sentence-transformers` is unavailable.
 
 ### `ml/retriever.py`
 
-- **Primary backend**: `sentence-transformers` (`all-MiniLM-L6-v2`) dense embeddings
-- **Fallback backend**: TF-IDF cosine similarity (sklearn) — activates automatically if `sentence-transformers` is not installed
-- Dataset slice filtered by `(level, topic)` — encoded once and cached in `_INDEX_CACHE`
-- Complexity penalty discourages mismatched advanced examples for simple questions
-- Returns top-N `(question, answer, level, topic)` rows as grounding context for the tutor prompt
+Two-pass personalized RAG:
+
+- **Pass 1** — query-driven top-`RAG_TOP_N` (default 3) from `(level, topic)` slice
+- **Pass 2** — weak-area targeted top-`RAG_WEAK_TOP_N` (default 2) via composite query `"concept topic"`, pooled across weak concepts, deduplicated against Pass 1
+- Answer length bounds filter per level; complexity penalty (+0.15 per hard term, +0.15 if > 18 words) discourages mismatched examples
+- `(len(df), level, topic)` cache key — index built once per dataset/level/topic combination
 
 ### `auth/auth_service.py`
 
-- Signup with email format validation (`_is_valid_email`) and password length check
-- Login with email or username lookup
-- User creation through `db/profile_repository.py`
+Signup with email format validation and password length check. Login by email or username.
 
 ### `auth/password_utils.py`
 
-- PBKDF2-SHA256 hashing via `passlib`
-- Timing-safe comparison on verify
+PBKDF2-SHA256 via `passlib`. `hmac.compare_digest` for timing-safe verification.
 
 ### `db/sqlite_store.py`
 
-- Opens SQLite connections with `PRAGMA journal_mode=WAL`
-- Initializes `users` and `profiles` tables
+Opens SQLite connections with `PRAGMA journal_mode=WAL` and `PRAGMA synchronous=NORMAL`. Initializes `users` and `profiles` tables.
 
 ### `db/profile_repository.py`
 
-- Creates, loads, and saves per-user learner profiles as JSON blobs
-- `INSERT OR IGNORE` with rollback guard on profile creation to handle race conditions
+Creates, loads, and saves per-user learner profiles as JSON blobs. `INSERT OR IGNORE` with rollback guard on profile creation.
 
 ### `eval/run_evaluation.py`
 
-Personalization evaluation script.
-
-- Runs 10 representative ML/AI questions through the full pipeline twice each: once with an empty profile (baseline) and once with a simulated 8-session learner profile (personalized — with mastery scores, weak areas, and `used_explanations` populated)
-- Captures detected level, confidence, topic, teaching mode, and a 55-word answer excerpt per run
-- Writes `eval/evaluation_results.md` with a per-question comparison table and summary counts
-
-Run with:
+Runs 10 representative questions through the pipeline twice each — blank profile (baseline) vs. simulated 8-session profile (personalized). Captures level, confidence, topic, teaching mode, and 55-word answer excerpt per run. Writes `eval/evaluation_results.md`.
 
 ```powershell
 python -m eval.run_evaluation
@@ -267,15 +220,13 @@ python -m eval.run_evaluation
 
 ### `tests/`
 
-45 unit tests across three files:
+**49 unit tests** across three files:
 
 | File | What it tests |
 |------|--------------|
 | `test_profile.py` | `ensure_profile_structure` — defaults, idempotency, type coercion, round-trips |
-| `test_memory.py` | Mastery scoring, diminishing returns, used_explanations, memory hints |
-| `test_auth.py` | Password hashing, email validation, `register_user` (with mocked DB) |
-
-Run all tests:
+| `test_memory.py` | Mastery scoring, diminishing returns, `used_explanations`, memory hints |
+| `test_auth.py` | Password hashing, email validation, `register_user` (mocked DB) |
 
 ```powershell
 python -m pytest tests/ -v
@@ -285,17 +236,15 @@ python -m pytest tests/ -v
 
 ## Learner Profile Schema
 
-Each learner profile stores:
-
 | Field | Type | Description |
 |-------|------|-------------|
 | `sessions` | int | Login count |
-| `questions_asked` | int | Total questions in all sessions |
+| `questions_asked` | int | Total questions across all sessions |
 | `last_level` | str | Most recently detected level |
 | `level_history` | list | Per-question level sequence |
 | `topics_seen` | list | Ordered first-seen topic list |
 | `topic_counts` | dict | Questions asked per topic |
-| `mastery` | dict | 0.0–1.0 score per topic (starts 0.5) |
+| `mastery` | dict | 0.0–1.0 score per topic (initialized 0.5) |
 | `weak_areas` | dict | Concept-level gaps per topic from evaluator |
 | `used_explanations` | dict | `level-mode` tags used per topic |
 | `recommended_next_topics` | list | Evaluator-suggested next topics |
@@ -307,96 +256,76 @@ Each learner profile stores:
 
 ### 1. Authentication
 
-User signs up (email validated, password hashed) or logs in. EduAgent loads or creates a learner profile from SQLite.
+Signup (email validated, password hashed with PBKDF2-SHA256) or login. Learner profile loaded or created in SQLite.
 
-### 2. Question Asking
+### 2. Classification
 
-The learner asks an AI/ML question.
+Fine-tuned DistilBERT predicts `beginner` / `intermediate` / `advanced` with confidence scores (97.92% test accuracy). Keyword heuristic fires automatically if model is absent.
 
-### 3. Classification
+### 3. Semantic Topic Detection
 
-Fine-tuned DistilBERT predicts level (`beginner` / `intermediate` / `advanced`) with confidence scores. Heuristic fallback fires if the model is absent.
+Alias table check (fast path) → semantic cosine similarity over per-level topic index (all-MiniLM-L6-v2) → TF-IDF fallback.
 
-### 4. Topic Detection
+### 4. Two-Pass RAG
 
-Alias expansion + TF-IDF cosine over dataset topic strings returns the best matching topic.
+Pass 1 retrieves top-3 query-similar examples from the `(level, topic)` slice. Pass 2 retrieves top-2 examples targeting recorded weak concepts, deduplicated against Pass 1.
 
-### 5. Retrieval
+### 5. Memory Read
 
-`sentence-transformers` dense embeddings retrieve the top-2 semantically similar Q&A pairs from the dataset, filtered to the detected `(level, topic)` slice.
+Memory Agent builds personalized hint: mastery score, weak concepts, previously used explanation styles for the detected topic.
 
-### 6. Memory Read
+### 6. Teaching Mode Selection
 
-The Memory Agent reads mastery score, weak concepts, and previously used explanation styles for the detected topic, and builds the memory hint and evaluator strategy hint.
+`infer_teaching_mode()` maps evaluator hint (priority 1) or mastery + weak areas (priority 2) to `remedial` / `clarification` / `advance` / `default`.
 
-### 7. Teaching Mode Selection
+### 7. Tutoring
 
-`infer_teaching_mode()` maps the evaluator strategy hint to one of four modes: `remedial`, `clarification`, `advance`, or `default`. Each mode injects a different instruction block into the tutor prompt.
+Tutor Agent assembles LLM prompt with mode-specific instruction block. Calls Groq (`llama-3.3-70b-versatile`, temperature 0.25). Local template fallback on timeout.
 
-### 8. Tutoring
+### 8. Explanation Tag Recorded
 
-The Tutor Agent calls Groq (`llama-3.3-70b-versatile`, temperature 0.25) with the assembled prompt. A local template fallback is available if the API times out.
+`record_used_explanation(topic, f"{level}-{teaching_mode}")` ensures the same style is not repeated on the next visit.
 
-### 9. Explanation Tag Recorded
+### 9. Follow-up and Evaluation
 
-`record_used_explanation(topic, f"{level}-{teaching_mode}")` tags the topic so the same style is not repeated on the next visit.
+Evaluator Agent generates a follow-up question (temperature 0.2), then evaluates the learner's answer (temperature 0.0) and returns a Pydantic-validated `EvaluationResult`.
 
-### 10. Follow-up Question
+### 10. Memory Update
 
-The Evaluator Agent generates one short conceptual follow-up question.
+Mastery updated (diminishing returns), weak concepts recorded, profile saved to SQLite.
 
-### 11. Evaluation
+### 11. Dashboard Update
 
-The learner answers. The Evaluator Agent scores the response and returns a Pydantic-validated `EvaluationResult`.
-
-### 12. Memory Update
-
-The Memory Agent updates mastery (diminishing returns), records weak concepts, and saves the profile to SQLite.
-
-### 13. Dashboard Update
-
-The UI refreshes: learner snapshot, memory summary, evaluation result, charts, system insights.
+UI refreshes: learner snapshot, memory summary, evaluation result, Mastery by Topic chart, Topic Revisit Count chart, Weak Concept Count chart, System Insights.
 
 ---
 
 ## Dataset Requirements
 
-EduAgent expects `datasets/eduagent_dataset.csv`.
-
-Required columns:
+`datasets/eduagent_dataset.csv` with columns:
 
 ```text
 question, answer, level, topic
 ```
 
-Example row:
-
-```csv
-question,answer,level,topic
-"What is supervised learning?","Supervised learning is...",beginner,Machine Learning
-```
+Training dataset (`eduagent_training_ready.csv`): 2,400 balanced synthetic AI/ML Q&A pairs (800 per level — beginner, intermediate, advanced) across 14 topics.
 
 ---
 
 ## Model Requirements
 
-EduAgent expects the fine-tuned DistilBERT classifier at:
+Fine-tuned DistilBERT classifier at:
 
 ```text
 models/distilbert_eduagent_v2/
+  config.json
+  model.safetensors
+  tokenizer_config.json
+  special_tokens_map.json
+  vocab.txt
 ```
 
-Typical files:
-
-```text
-config.json
-model.safetensors
-tokenizer_config.json
-special_tokens_map.json
-vocab.txt
-```
-
-If this directory is absent, the keyword heuristic classifier activates automatically.
+If absent, the keyword heuristic activates automatically (functional but lower accuracy).
 
 ---
 
@@ -407,13 +336,13 @@ Create a `.env` file in the project root:
 ```text
 GROQ_API_KEY=your_groq_api_key_here
 MODEL_NAME=llama-3.3-70b-versatile
-LLM_TIMEOUT_SECONDS=30
+LLM_TIMEOUT_SECONDS=8
 LLM_MAX_RETRIES=2
+RAG_TOP_N=3
+RAG_WEAK_TOP_N=2
 ```
 
-Only `GROQ_API_KEY` is required. The other variables have sensible defaults.
-
-You can also set the API key in PowerShell:
+Only `GROQ_API_KEY` is required.
 
 ```powershell
 $env:GROQ_API_KEY="your_groq_api_key_here"
@@ -444,21 +373,19 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Key dependencies: `pandas`, `numpy`, `scikit-learn`, `transformers`, `torch`, `sentence-transformers`, `gradio`, `groq`, `matplotlib`, `seaborn`, `python-dotenv`, `passlib`, `pydantic`.
+Key dependencies: `transformers`, `torch`, `sentence-transformers`, `gradio`, `groq`, `pandas`, `numpy`, `scikit-learn`, `matplotlib`, `python-dotenv`, `passlib`, `pydantic`.
 
 ### 4. Configure Environment
 
-```text
-GROQ_API_KEY=your_groq_api_key_here
-```
+Add `GROQ_API_KEY` to `.env` (see above).
 
-### 5. Run the App
+### 5. Run
 
 ```powershell
 python .\gradio_app.py
 ```
 
-Open the local URL printed by Gradio (usually `http://127.0.0.1:7860`).
+Open `http://127.0.0.1:7860` in your browser.
 
 ---
 
@@ -467,10 +394,10 @@ Open the local URL printed by Gradio (usually `http://127.0.0.1:7860`).
 Build check:
 
 ```powershell
-python -c "from app.main import create_app; app = create_app(); print('app build ok')"
+python -c "from app.main import create_app; app = create_app(); print('ok')"
 ```
 
-Unit tests:
+Unit tests (49 tests):
 
 ```powershell
 python -m pytest tests/ -v
@@ -482,73 +409,59 @@ Personalization evaluation (requires `GROQ_API_KEY`):
 python -m eval.run_evaluation
 ```
 
-This generates `eval/evaluation_results.md` — a side-by-side comparison of tutor behavior with and without personalization active.
+Generates `eval/evaluation_results.md` — side-by-side comparison of blank-profile vs. personalized tutor behavior across 10 questions.
 
 ---
 
 ## Common Issues
 
-### Missing `GROQ_API_KEY`
-
-Make sure `.env` exists or set the variable in the current shell.
-
-### Dataset Not Found
-
-Make sure `datasets/eduagent_dataset.csv` exists.
-
-### Classifier Files Not Found
-
-If `models/distilbert_eduagent_v2/` is absent the keyword heuristic classifier activates automatically. Classification still works, but with lower accuracy on ambiguous phrasing.
-
-### Empty Charts
-
-Normal for a new learner profile. Charts populate after questions and follow-up evaluations.
-
-### No Follow-up Context
-
-Ask a main question first, then answer the generated follow-up in the Evaluate tab.
-
-### Login or Profile Issues
-
-Restart the app so `init_db()` runs and initializes the required SQLite tables.
+| Issue | Resolution |
+|-------|------------|
+| Missing `GROQ_API_KEY` | Add to `.env` or set `$env:GROQ_API_KEY` in shell |
+| Dataset not found | Ensure `datasets/eduagent_dataset.csv` exists |
+| Classifier files missing | Keyword heuristic activates automatically — classification still works |
+| Empty progress charts | Normal for new profiles — populate after a few questions and evaluations |
+| No follow-up context | Ask a main question first, then answer the follow-up in the Evaluate tab |
+| Login/profile issues | Restart app so `init_db()` re-initializes the SQLite tables |
 
 ---
 
 ## Project Strengths
 
-- Full adaptive learning loop — classify, retrieve, tune, evaluate, remember, repeat
-- Semantic retrieval with dense embeddings, not just keyword matching
-- Four adaptive teaching modes driven by real learner history
-- Diminishing-returns mastery model — cannot trivially max out
-- `used_explanations` prevents the LLM from repeating the same explanation style
-- Pydantic-validated evaluator output — no raw dict access from LLM responses
-- Validated Gradio handler tuples — output routing errors caught at runtime
-- 45 unit tests covering auth, memory, and profile layers
-- SQLite WAL journal — no database corruption on crash
-- Local fallback answer — app never hard-crashes on LLM timeout
-- System Insights panel for explainability during demos
+- **97.92% classifier accuracy** — +35.8 pp over keyword heuristic, zero GPU required at inference (CPU DistilBERT)
+- **Two-pass personalized RAG** — separate query-driven and weak-area retrieval passes ground every answer in relevant dataset context
+- **Semantic topic detection** — alias table handles common abbreviations; MiniLM-L6-v2 handles paraphrases
+- **Four teaching modes** with different LLM instruction blocks — measurably different explanation styles for remedial vs. advanced learners
+- **Diminishing-returns mastery** — mastery cannot trivially reach 1.0; gains compress near saturation
+- **`used_explanations` deduplication** — same explanation style never repeated for a topic
+- **Pydantic-validated evaluator** — no unsafe raw dict access from LLM JSON responses
+- **49 unit tests** covering auth, memory, and profile layers
+- **SQLite WAL journal** — no database corruption on crash
+- **Local fallback answer** — app never hard-crashes on LLM timeout
+- **System Insights panel** for demo and professor-facing explainability
+- Conference-style research paper [`report.tex`](report.tex) included
 
 ---
 
-## Current Limitations
+## Limitations
 
 - Mastery is a heuristic score, not a validated pedagogical model (e.g. Bayesian Knowledge Tracing).
-- Weak areas accumulate indefinitely — there is no forgetting or auto-clearing mechanism when mastery recovers.
-- Teaching mode selection is driven by string-matching on the LLM evaluator hint, not a trained classifier.
-- Retrieved examples ground the tutor prompt but do not strictly prevent hallucinations for niche topics.
+- Weak areas accumulate indefinitely — no forgetting or auto-clearing when mastery recovers.
+- Teaching mode selection uses string-matching on the LLM evaluator hint, not a trained classifier.
+- Retrieved examples ground the prompt but do not strictly prevent hallucinations for niche topics.
 - Single-user Gradio app — not designed for concurrent multi-user production deployment.
 
 ---
 
-## Future Improvements
+## Future Work
 
 - Replace heuristic mastery with Bayesian Knowledge Tracing
-- Add a forgetting/decay mechanism to weak areas
-- Add per-topic learning paths and exportable learner reports
-- Add instructor/admin analytics dashboard
-- Add automated LLM response quality evaluation (e.g. G-Eval)
-- Add evaluation history charts
-- Add a custom frontend for production deployment
+- Weak area decay / auto-clearing when mastery crosses a recovery threshold
+- Per-topic learning paths and exportable learner reports
+- Instructor analytics dashboard
+- Automated LLM response quality evaluation (G-Eval / LLM-as-judge)
+- Evaluation history charts
+- Production frontend with multi-user support
 
 ---
 
@@ -558,24 +471,28 @@ Restart the app so `init_db()` runs and initializes the required SQLite tables.
 |-------|-----------|
 | UI | Gradio 6.0 |
 | LLM | Groq API — `llama-3.3-70b-versatile` |
-| Classifier | DistilBERT (fine-tuned) via HuggingFace Transformers |
-| Retrieval | `sentence-transformers` (`all-MiniLM-L6-v2`) |
+| Classifier | DistilBERT (`distilbert-base-uncased`, fine-tuned) via HuggingFace Transformers |
+| Embeddings | `sentence-transformers` — `all-MiniLM-L6-v2` (384-dim) |
+| TF-IDF fallback | scikit-learn `TfidfVectorizer` |
 | Database | SQLite (WAL journal) |
 | Auth | `passlib` PBKDF2-SHA256 |
-| Validation | Pydantic |
+| Validation | Pydantic v2 |
 | Charts | Matplotlib |
-| Data | Pandas, scikit-learn |
+| Data | Pandas, NumPy, scikit-learn |
 
 ---
 
 ## Summary
 
-EduAgent is an adaptive AI/ML tutor with a complete personalization loop:
+EduAgent demonstrates a complete adaptive learning loop:
 
 ```
-Question → Classify → Detect Topic → Semantic Retrieval → Read Memory
-→ Select Teaching Mode → Tutor Answer → Follow-up → Evaluate
-→ Update Mastery + Weak Areas + Used Explanations → Save Profile
+Question → DistilBERT Classify → Semantic Topic Detection
+→ Two-Pass RAG (query-driven + weak-area) → Read Memory
+→ Select Teaching Mode → Tutor Answer (mode-specific)
+→ Follow-up Question → Evaluate (Pydantic-validated)
+→ Update Mastery (diminishing returns) + Weak Areas + Used Explanations
+→ Save Profile → Dashboard Refresh
 ```
 
-It demonstrates real adaptive behavior — the explanation style, depth, and focus change measurably between a first-time learner and a returning learner with recorded history.
+Explanation style, depth, and focus change measurably between a first-time learner and a returning learner with recorded mastery history — the core goal of the adaptive personalization design.
