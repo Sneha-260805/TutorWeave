@@ -174,8 +174,9 @@ Shared singleton loader for `all-MiniLM-L6-v2`. Loaded once at import time; `sem
 ### `ml/classifier.py`
 
 - Loads fine-tuned DistilBERT from `models/distilbert_eduagent_v2/`
-- Falls back to keyword heuristic if model directory is absent
+- Falls back to keyword heuristic if model directory is absent (62.1% accuracy vs. 97.92% for DistilBERT)
 - Beginner-intent calibration applies only to questions of ≤ 8 words
+- **HuggingFace Hub**: Model also published at [`Sneha-260805/distilbert-eduagent-v2`](https://huggingface.co/Sneha-260805/distilbert-eduagent-v2) for direct loading via `transformers`
 
 ### `ml/topic_detector.py`
 
@@ -323,9 +324,24 @@ models/distilbert_eduagent_v2/
   tokenizer_config.json
   special_tokens_map.json
   vocab.txt
+  README.md                             ← model card with training details
 ```
 
-If absent, the keyword heuristic activates automatically (functional but lower accuracy).
+The model weights are also published on the HuggingFace Hub for direct loading without cloning the repository:
+
+```python
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+model_id = "Sneha-260805/distilbert-eduagent-v2"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForSequenceClassification.from_pretrained(model_id)
+```
+
+**Hub link**: [`Sneha-260805/distilbert-eduagent-v2`](https://huggingface.co/Sneha-260805/distilbert-eduagent-v2)
+
+For training details, performance metrics, and usage examples, see [`models/distilbert_eduagent_v2/README.md`](models/distilbert_eduagent_v2/README.md).
+
+If the model directory is absent, the keyword heuristic activates automatically (functional but lower accuracy: 62.1% vs. 97.92%).
 
 ---
 
