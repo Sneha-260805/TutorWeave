@@ -1,0 +1,13 @@
+{
+  "data_path": "data/eduagent_dataset_easy_v2.csv",
+  "output_dir": "models/distilbert_eduagent_v2",
+  "base_model": "distilbert-base-uncased",
+  "epochs": 3,
+  "batch_size": 8,
+  "max_length": 128,
+  "learning_rate": 2e-05,
+  "weight_decay": 0.01,
+  "warmup_ratio": 0.06,
+  "early_stopping_patience": 2,
+  "seed": 42
+}

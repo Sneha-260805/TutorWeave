@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load dataset
-df = pd.read_csv('eduagent_dataset.csv')
+df = pd.read_csv('datasets/eduagent_dataset.csv')
 
 print("=== BASIC INFO ===")
 print(df.head())
@@ -19,7 +19,7 @@ plt.title('Distribution of Difficulty Levels')
 plt.xlabel('Level')
 plt.ylabel('Count')
 plt.tight_layout()
-plt.savefig('graph1_levels.png')
+plt.savefig('datasets/graph1_levels.png')
 plt.close()
 
 # -----------------------------
@@ -29,7 +29,7 @@ plt.figure(figsize=(10, 8))
 df['topic'].value_counts().plot(kind='barh')
 plt.title('Questions per Topic')
 plt.tight_layout()
-plt.savefig('graph2_topics.png')
+plt.savefig('datasets/graph2_topics.png')
 plt.close()
 
 # -----------------------------
@@ -43,7 +43,7 @@ plt.title('Average Answer Length by Level')
 plt.xlabel('Level')
 plt.ylabel('Average Word Count')
 plt.tight_layout()
-plt.savefig('graph3_lengths.png')
+plt.savefig('datasets/graph3_lengths.png')
 plt.close()
 
 # -----------------------------

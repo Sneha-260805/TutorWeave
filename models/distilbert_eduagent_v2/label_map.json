@@ -1,0 +1,17 @@
+{
+  "labels": [
+    "beginner",
+    "intermediate",
+    "advanced"
+  ],
+  "label2id": {
+    "beginner": 0,
+    "intermediate": 1,
+    "advanced": 2
+  },
+  "id2label": {
+    "0": "beginner",
+    "1": "intermediate",
+    "2": "advanced"
+  }
+}

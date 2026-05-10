@@ -4,9 +4,13 @@ scikit-learn
 transformers
 datasets
 torch
+sentence-transformers
+tf-keras
 gradio
 groq
 matplotlib
 seaborn
 wordcloud
 python-dotenv
+passlib
+pydantic
