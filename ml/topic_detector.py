@@ -1,10 +1,44 @@
 import re
+import logging
+
+import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+from ml.embedder import embed_model as _embed_model, semantic_available as _semantic_available
+
+logger = logging.getLogger(__name__)
+
 _TOPIC_INDEX_CACHE = {}
 TOPIC_ALIASES = {
+    "machine learning basics": [
+        "ml",
+        "machine learning",
+        "types of ml",
+        "types of machine learning",
+        "ml types",
+        "categories of ml",
+        "machine learning categories",
+        "machine learning algorithms",
+        "ml algorithms",
+        "supervised",
+        "unsupervised",
+        "semi supervised",
+        "what is ml",
+        "what is machine learning",
+    ],
+    "neural networks": [
+        "deep learning",
+        "dl",
+        "artificial neural network",
+        "ann",
+        "neural net",
+        "neural nets",
+        "perceptron",
+        "multilayer perceptron",
+        "mlp",
+    ],
     "large language models": [
         "llm",
         "llms",
@@ -12,10 +46,14 @@ TOPIC_ALIASES = {
         "large language models",
         "gpt",
         "chatgpt",
+        "foundation model",
+        "foundation models",
     ],
     "natural language processing": [
         "nlp",
         "natural language processing",
+        "text processing",
+        "language model",
     ],
     "retrieval augmented generation": [
         "rag",
@@ -27,24 +65,78 @@ TOPIC_ALIASES = {
         "vector database",
         "vector databases",
         "embedding database",
+        "faiss",
+        "chromadb",
+        "pinecone",
     ],
     "convolutional neural networks": [
         "cnn",
         "cnns",
         "convolutional neural network",
         "convolutional neural networks",
+        "convolution",
     ],
     "recurrent neural networks": [
         "rnn",
         "rnns",
         "recurrent neural network",
         "recurrent neural networks",
+        "lstm",
+        "gru",
+        "long short term memory",
     ],
     "generative adversarial networks": [
         "gan",
         "gans",
         "generative adversarial network",
         "generative adversarial networks",
+    ],
+    "transformer models": [
+        "transformer",
+        "transformers",
+        "bert",
+        "gpt model",
+        "self attention",
+        "encoder decoder",
+    ],
+    "gradient descent": [
+        "learning rate",
+        "optimizer",
+        "optimisation",
+        "optimization",
+        "sgd",
+        "stochastic gradient descent",
+        "mini batch",
+    ],
+    "overfitting and regularization": [
+        "overfitting",
+        "underfitting",
+        "regularization",
+        "regularisation",
+        "dropout",
+        "l1",
+        "l2",
+        "weight decay",
+        "bias variance",
+        "bias-variance",
+    ],
+    "transfer learning": [
+        "transfer learning",
+        "fine tuning",
+        "fine-tuning",
+        "pretrained",
+        "pre-trained",
+        "pretrain",
+    ],
+    "reinforcement learning": [
+        "rl",
+        "reinforcement learning",
+        "reward",
+        "agent environment",
+        "q learning",
+        "policy gradient",
+        "markov",
+        "mdp",
     ],
 }
 
@@ -97,7 +189,41 @@ def _df_cache_key(df: pd.DataFrame, level: str):
     )
 
 
-def _build_topic_index(level, df):
+# ---------------------------------------------------------------------------
+# Semantic topic index  (sentence-transformers)
+# ---------------------------------------------------------------------------
+
+def _build_semantic_topic_index(level: str, df: pd.DataFrame):
+    """
+    For each topic encode a rich document:
+      "<topic name>: <all questions for that topic>"
+    Mean-pool into one vector per topic. Cached per (dataset, level).
+    """
+    level_df = df[df["level"].astype(str).str.lower() == level].copy()
+    if len(level_df) == 0:
+        return None
+
+    topic_docs = (
+        level_df.groupby("topic")["question"]
+        .apply(lambda qs: " ".join(qs.tolist()))
+        .reset_index()
+    )
+    # Prepend topic name so the embedding reflects both name and typical questions
+    topic_docs["document"] = topic_docs.apply(
+        lambda row: f"{row['topic']}: {row['question']}", axis=1
+    )
+
+    documents = topic_docs["document"].tolist()
+    topic_names = topic_docs["topic"].tolist()
+    vectors = _embed_model.encode(documents, convert_to_numpy=True, show_progress_bar=False)
+    return topic_names, vectors
+
+
+# ---------------------------------------------------------------------------
+# TF-IDF fallback topic index
+# ---------------------------------------------------------------------------
+
+def _build_tfidf_topic_index(level: str, df: pd.DataFrame):
     level_df = df[df["level"].astype(str).str.lower() == level].copy()
     if len(level_df) == 0:
         return None
@@ -108,51 +234,83 @@ def _build_topic_index(level, df):
         .reset_index()
     )
     topic_texts["question"] = topic_texts.apply(
-        lambda row: f"{clean_text(row['topic'])} {row['question']}",
-        axis=1,
+        lambda row: f"{clean_text(row['topic'])} {row['question']}", axis=1
     )
-
     vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words="english")
     topic_matrix = vectorizer.fit_transform(topic_texts["question"].tolist())
     return topic_texts, vectorizer, topic_matrix
 
 
-def get_topic_index(level, df):
+def _get_topic_index(level: str, df: pd.DataFrame):
     level = str(level).strip().lower()
     key = _df_cache_key(df, level)
     if key not in _TOPIC_INDEX_CACHE:
-        _TOPIC_INDEX_CACHE[key] = _build_topic_index(level, df)
+        if _semantic_available:
+            _TOPIC_INDEX_CACHE[key] = ("semantic", _build_semantic_topic_index(level, df))
+        else:
+            _TOPIC_INDEX_CACHE[key] = ("tfidf", _build_tfidf_topic_index(level, df))
     return _TOPIC_INDEX_CACHE[key]
 
 
-def detect_best_topic(user_question, level, df):
-    """
-    Detect the closest topic using a cached TF-IDF topic index.
+# ---------------------------------------------------------------------------
+# Public detection function
+# ---------------------------------------------------------------------------
 
-    This is still lexical retrieval, not dense semantic RAG, but it avoids
-    refitting a vectorizer on every single query.
+def detect_best_topic(user_question: str, level: str, df: pd.DataFrame) -> str:
+    """
+    Detect the closest topic for the user question.
+
+    Priority:
+    1. Alias table exact match (fast, handles abbreviations like ml, cnn, rag)
+    2. Semantic dense-embedding cosine similarity (sentence-transformers)
+       Falls back to TF-IDF if sentence-transformers is unavailable.
+    3. Generic ML fallback when all scores are zero.
     """
     user_question_clean = clean_text(user_question)
     alias_topic = _alias_topic(user_question_clean, df)
-    user_question_clean = expand_topic_aliases(user_question_clean)
-    index = get_topic_index(level, df)
-    if index is None:
-        return alias_topic
 
-    topic_texts, vectorizer, topic_matrix = index
-    user_vec = vectorizer.transform([user_question_clean])
-    sims = cosine_similarity(user_vec, topic_matrix).flatten()
-    scored_topics = topic_texts.copy()
-    scored_topics["similarity"] = sims
-
+    # Alias match is authoritative — no need to run the model
     if alias_topic is not None:
-        scored_topics.loc[
-            scored_topics["topic"].astype(str).str.lower() == str(alias_topic).lower(),
-            "similarity",
-        ] += 0.35
-
-    if scored_topics["similarity"].max() <= 0:
         return alias_topic
 
-    best_row = scored_topics.sort_values(by="similarity", ascending=False).iloc[0]
+    backend, index = _get_topic_index(level, df)
+    if index is None:
+        return _default_topic(df)
+
+    if backend == "semantic":
+        topic_names, topic_vectors = index
+        user_vec = _embed_model.encode([user_question], convert_to_numpy=True)
+        sims = cosine_similarity(user_vec, topic_vectors).flatten()
+        best_idx = int(np.argmax(sims))
+        logger.debug(
+            "Semantic topic detection: '%s' → '%s' (score=%.3f)",
+            user_question, topic_names[best_idx], sims[best_idx],
+        )
+        return topic_names[best_idx]
+
+    # TF-IDF fallback path
+    topic_texts, vectorizer, topic_matrix = index
+    user_question_expanded = expand_topic_aliases(user_question_clean)
+    user_vec = vectorizer.transform([user_question_expanded])
+    sims = cosine_similarity(user_vec, topic_matrix).flatten()
+    scored = topic_texts.copy()
+    scored["similarity"] = sims
+    if scored["similarity"].max() <= 0:
+        return _default_topic(df)
+    best_row = scored.sort_values("similarity", ascending=False).iloc[0]
     return best_row["topic"]
+
+
+def _default_topic(df: pd.DataFrame) -> str:
+    """Return the most general topic when nothing else matches."""
+    lookup = _available_topic_lookup(df)
+    for candidate in ("machine learning basics", "neural networks", "classification"):
+        if candidate in lookup:
+            return lookup[candidate]
+    topics = sorted(lookup.values())
+    return topics[0] if topics else "general"
+
+
+# Keep for backward compatibility (retriever imports this)
+def get_topic_index(level, df):
+    return _get_topic_index(level, df)

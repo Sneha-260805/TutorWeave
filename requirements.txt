@@ -4,6 +4,8 @@ scikit-learn
 transformers
 datasets
 torch
+sentence-transformers
+tf-keras
 gradio
 groq
 matplotlib

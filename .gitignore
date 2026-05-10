@@ -11,6 +11,20 @@ __pycache__/
 *.pyc
 .env
 eduagent.db
+*.db-journal
+
+# Local tool/worktree state
+.claude/
+.pytest_cache/
+
+# Runtime/generated app state
+runtime/
+
+# LaTeX build byproducts
+*.aux
+*.log
+*.out
+*.toc
 
 # Track dataset files and graphs
 !datasets/

@@ -17,10 +17,11 @@ from agents.memory_agent import (
     update_profile_after_question,
     update_profile_after_evaluation,
     update_last_evaluation,
+    record_used_explanation,
     build_memory_hint,
     build_evaluation_strategy_hint,
 )
-from app.ui import build_ui, build_demo
+from app.ui import build_demo
 
 
 def confidence_to_text(conf):
@@ -31,12 +32,9 @@ def confidence_to_text(conf):
     )
 
 
-def examples_to_markdown(examples_df):
-    if examples_df is None or len(examples_df) == 0:
-        return "No examples retrieved."
-
+def _format_example_rows(examples_df, offset: int = 0) -> list:
     lines = []
-    for i, row in enumerate(examples_df.itertuples(index=False), 1):
+    for i, row in enumerate(examples_df.itertuples(index=False), offset + 1):
         lines.append(
             f"### Example {i}\n"
             f"**Question:** {row.question}\n\n"
@@ -44,6 +42,19 @@ def examples_to_markdown(examples_df):
             f"**Level:** {row.level}\n\n"
             f"**Topic:** {row.topic}"
         )
+    return lines
+
+
+def examples_to_markdown(examples_df, weak_examples_df=None):
+    if examples_df is None or len(examples_df) == 0:
+        return "No examples retrieved."
+
+    lines = ["## Retrieved Examples (Semantically Similar to Your Question)"]
+    lines += _format_example_rows(examples_df)
+
+    if weak_examples_df is not None and len(weak_examples_df) > 0:
+        lines.append("\n## Retrieved Examples (Targeting Your Weak Areas)")
+        lines += _format_example_rows(weak_examples_df, offset=len(examples_df))
     return "\n---\n".join(lines)
 
 
@@ -164,6 +175,7 @@ def _placeholder_chart(title: str, message: str):
     ax.text(0.5, 0.5, message, ha="center", va="center", fontsize=11, color=CHART_MUTED)
     ax.set_title(title, fontsize=13, fontweight="bold", color="#f8fafc", pad=12)
     fig.tight_layout(pad=1.4)
+    plt.close(fig)
     return fig
 
 
@@ -194,6 +206,7 @@ def build_mastery_chart(profile: dict):
     _style_dark_axis(ax, "Mastery by Topic")
     ax.spines[["top", "right"]].set_visible(False)
     fig.tight_layout(pad=1.4)
+    plt.close(fig)
     return fig
 
 
@@ -225,6 +238,7 @@ def build_topic_revisit_chart(profile: dict):
     _style_dark_axis(ax, "Topic Revisit Count")
     ax.spines[["top", "right"]].set_visible(False)
     fig.tight_layout(pad=1.4)
+    plt.close(fig)
     return fig
 
 
@@ -248,6 +262,7 @@ def build_weak_concepts_chart(profile: dict):
     _style_dark_axis(ax, "Weak Concept Count by Topic")
     ax.spines[["top", "right"]].set_visible(False)
     fig.tight_layout(pad=1.4)
+    plt.close(fig)
     return fig
 
 
@@ -284,68 +299,14 @@ def build_system_insights_markdown(
         "<h4>Last Evaluation Summary</h4>"
         f"<p>{escape(last_eval_summary)}</p>"
         "</div>"
-        "### Evaluator Strategy Hint\n"
-        f"{eval_hint if eval_hint else 'No strategy hint yet.'}\n\n"
-        "### Last Evaluation JSON\n"
-        f"```json\n{json.dumps(last_eval, indent=2)}\n```"
-    )
-
-
-# ---------------------------------------------------------
-# AUTH FLOW
-# ---------------------------------------------------------
-def handle_signup(name, email, password):
-    """
-    Signup handler.
-    """
-    ok, message = signup_user(name=name, email=email, password=password)
-    return message
-
-
-def handle_login(email, password):
-    """
-    Login handler.
-
-    Expected login_user return:
-        success, message, user
-    where user is something like:
-        {"id": "...", "name": "...", "email": "..."}
-    """
-    success, message, user = login_user(email=email, password=password)
-
-    if not success:
-        return (
-            False,                 # logged_in
-            None,                  # user_state
-            "Login failed",        # status
-            "",                    # profile markdown
-            message                # auth message
-        )
-
-    profile = load_profile(user["id"])
-    profile = ensure_profile_structure(profile)
-    profile["sessions"] += 1
-    save_profile(user["id"], profile)
-
-    return (
-        True,
-        user,
-        f"Logged in as {user['name']}",
-        profile_to_markdown(profile),
-        "Login successful"
-    )
-
-
-def handle_logout():
-    """
-    Logout handler.
-    """
-    return (
-        False,     # logged_in
-        None,      # user_state
-        "Logged out",
-        "",        # profile markdown
-        "You have been logged out."
+        "<div class='insight-block'>"
+        "<h4>Evaluator Strategy Hint</h4>"
+        f"<p>{escape(str(eval_hint)) if eval_hint else 'No strategy hint yet.'}</p>"
+        "</div>"
+        "<div class='insight-block'>"
+        "<h4>Last Evaluation JSON</h4>"
+        f"<pre><code>{escape(json.dumps(last_eval, indent=2))}</code></pre>"
+        "</div>"
     )
 
 
@@ -411,10 +372,11 @@ def handle_question(user_state, chat_history, user_question):
     profile = ensure_profile_structure(profile)
 
     # Tutor Agent
-    level, confidence, topic, examples, answer = generate_tutor_response(user_question, profile)
+    level, confidence, topic, examples, weak_examples, answer, teaching_mode = generate_tutor_response(user_question, profile)
 
     # Memory update after question
     profile = update_profile_after_question(profile, topic, level)
+    profile = record_used_explanation(profile, topic, f"{level}-{teaching_mode}")
     save_profile(user_id, profile)
 
     # Evaluator Agent: generate follow-up
@@ -452,7 +414,7 @@ def handle_question(user_state, chat_history, user_question):
         topic,
         answer,
         followup_question,
-        examples_to_markdown(examples),
+        examples_to_markdown(examples, weak_examples),
         profile_to_markdown(profile),
         "",
         "Question answered successfully."
@@ -523,175 +485,208 @@ def clear_chat_and_followup(user_state):
 # ---------------------------------------------------------
 # APP CREATION
 # ---------------------------------------------------------
+
+# Output key lists — must match the outputs= lists in ui.py exactly.
+# _pack() validates length and order at runtime so mismatches are caught immediately.
+_SIGNUP_KEYS = [
+    "auth_status", "signup_name", "signup_username", "signup_email",
+    "signup_password", "auth_tabs", "login_identifier",
+]
+_AUTH_KEYS = [
+    "auth_status", "logged_in", "user_state", "welcome_md", "chatbot", "state",
+    "level_box", "conf_box", "topic_box", "profile_md", "insights_md",
+    "mastery_plot", "revisit_plot", "weak_concept_plot",
+    "auth_section", "app_section", "followup_context_state",
+]
+_ASK_KEYS = [
+    "chatbot", "state", "followup_context_state",
+    "level_box", "conf_box", "topic_box", "followup_box",
+    "profile_md", "examples_md", "insights_md",
+    "mastery_plot", "revisit_plot", "weak_concept_plot",
+]
+_EVAL_KEYS = [
+    "evaluation_md", "profile_md", "eval_status",
+    "insights_md", "mastery_plot", "revisit_plot", "weak_concept_plot",
+]
+
+
+def _pack(outputs: dict, keys: list) -> tuple:
+    missing = [k for k in keys if k not in outputs]
+    extra = [k for k in outputs if k not in keys]
+    if missing or extra:
+        raise ValueError(f"Handler output mismatch — missing: {missing}, unexpected: {extra}")
+    return tuple(outputs[k] for k in keys)
+
+
 def create_app():
     """
     Create the Gradio application.
     """
     init_db()
 
-    # Legacy UI compatibility wrappers: preserve the previous layout/flow.
-    def handle_signup_legacy(name, username, email, password):
+    def handle_signup(name, username, email, password):
         ok, message = signup_user(name=name, email=email, password=password, username=username)
         if ok:
-            return message, "", "", "", ""
-        return message, name, username, email, ""
+            return _pack({
+                "auth_status": message,
+                "signup_name": "",
+                "signup_username": "",
+                "signup_email": "",
+                "signup_password": "",
+                "auth_tabs": gr.update(selected=0),
+                "login_identifier": email,
+            }, _SIGNUP_KEYS)
+        return _pack({
+            "auth_status": message,
+            "signup_name": name,
+            "signup_username": username or "",
+            "signup_email": email,
+            "signup_password": "",
+            "auth_tabs": gr.update(),
+            "login_identifier": gr.update(),
+        }, _SIGNUP_KEYS)
 
-    def handle_login_legacy(identifier, password):
+    def handle_login(identifier, password):
         success, message, user = login_user(email=identifier, password=password)
         if not success:
-            return (
-                message,
-                None,
-                "",
-                [],
-                [],
-                "",
-                "",
-                "",
-                "",
-                "",
-                _placeholder_chart("Mastery by Topic", "Login to view mastery trends."),
-                _placeholder_chart("Topic Revisit Count", "Login to view topic revisits."),
-                _placeholder_chart("Weak Concept Count by Topic", "Login to view weak concepts."),
-                gr.update(visible=True),
-                gr.update(visible=False),
-            )
+            return _pack({
+                "auth_status": message,
+                "logged_in": False,
+                "user_state": None,
+                "welcome_md": "",
+                "chatbot": [],
+                "state": [],
+                "level_box": "",
+                "conf_box": "",
+                "topic_box": "",
+                "profile_md": "",
+                "insights_md": "",
+                "mastery_plot": _placeholder_chart("Mastery by Topic", "Login to view mastery trends."),
+                "revisit_plot": _placeholder_chart("Topic Revisit Count", "Login to view topic revisits."),
+                "weak_concept_plot": _placeholder_chart("Weak Concept Count by Topic", "Login to view weak concepts."),
+                "auth_section": gr.update(visible=True),
+                "app_section": gr.update(visible=False),
+                "followup_context_state": None,
+            }, _AUTH_KEYS)
         profile = load_profile(user["id"])
         profile = ensure_profile_structure(profile)
         profile["sessions"] += 1
         save_profile(user["id"], profile)
-        insights_md = build_system_insights_markdown(profile=profile)
-        return (
-            message,
-            user,
-            f"Logged in as **{user['name']}** ({user['email']})",
-            [],
-            [],
-            "",
-            "",
-            "",
-            profile_to_markdown(profile),
-            insights_md,
-            build_mastery_chart(profile),
-            build_topic_revisit_chart(profile),
-            build_weak_concepts_chart(profile),
-            gr.update(visible=False),
-            gr.update(visible=True),
-        )
+        return _pack({
+            "auth_status": message,
+            "logged_in": True,
+            "user_state": user,
+            "welcome_md": f"Logged in as **{user['name']}** ({user['email']})",
+            "chatbot": [],
+            "state": [],
+            "level_box": "",
+            "conf_box": "",
+            "topic_box": "",
+            "profile_md": profile_to_markdown(profile),
+            "insights_md": build_system_insights_markdown(profile=profile),
+            "mastery_plot": build_mastery_chart(profile),
+            "revisit_plot": build_topic_revisit_chart(profile),
+            "weak_concept_plot": build_weak_concepts_chart(profile),
+            "auth_section": gr.update(visible=False),
+            "app_section": gr.update(visible=True),
+            "followup_context_state": None,
+        }, _AUTH_KEYS)
 
-    def handle_logout_legacy():
-        return (
-            "Logged out.",
-            None,
-            "",
-            [],
-            [],
-            "",
-            "",
-            "",
-            "",
-            "",
-            _placeholder_chart("Mastery by Topic", "Login to view mastery trends."),
-            _placeholder_chart("Topic Revisit Count", "Login to view topic revisits."),
-            _placeholder_chart("Weak Concept Count by Topic", "Login to view weak concepts."),
-            gr.update(visible=True),
-            gr.update(visible=False),
-        )
+    def handle_logout():
+        return _pack({
+            "auth_status": "Logged out.",
+            "logged_in": False,
+            "user_state": None,
+            "welcome_md": "",
+            "chatbot": [],
+            "state": [],
+            "level_box": "",
+            "conf_box": "",
+            "topic_box": "",
+            "profile_md": "",
+            "insights_md": "",
+            "mastery_plot": _placeholder_chart("Mastery by Topic", "Login to view mastery trends."),
+            "revisit_plot": _placeholder_chart("Topic Revisit Count", "Login to view topic revisits."),
+            "weak_concept_plot": _placeholder_chart("Weak Concept Count by Topic", "Login to view weak concepts."),
+            "auth_section": gr.update(visible=True),
+            "app_section": gr.update(visible=False),
+            "followup_context_state": None,
+        }, _AUTH_KEYS)
 
-    def ask_eduagent_legacy(user_question, chat_history, user):
+    def ask_eduagent(user_question, chat_history, user):
         (
-            chatbot_history,
-            followup_context,
-            level,
-            confidence_text,
-            topic,
-            _tutor_answer,
-            followup_question,
-            examples_markdown,
-            profile_markdown,
-            _evaluation_markdown,
-            status_message,
+            chatbot_history, followup_context, level, confidence_text, topic,
+            _tutor_answer, followup_question, examples_markdown,
+            profile_markdown, _evaluation_markdown, status_message,
         ) = handle_question(user, chat_history, user_question)
-        if status_message in ("Please login first.", "Please enter a question."):
-            profile_obj = ensure_profile_structure({})
-            return (
-                chatbot_history,
-                chatbot_history,
-                None,
-                status_message,
-                "",
-                "",
-                "",
-                profile_markdown,
-                examples_markdown,
-                build_system_insights_markdown(profile=profile_obj),
-                build_mastery_chart(profile_obj),
-                build_topic_revisit_chart(profile_obj),
-                build_weak_concepts_chart(profile_obj),
-            )
-        profile_obj = ensure_profile_structure(load_profile(user["id"]))
-        return (
-            chatbot_history,
-            chatbot_history,
-            followup_context,
-            level,
-            confidence_text,
-            topic,
-            followup_question,
-            profile_markdown,
-            examples_markdown,
-            build_system_insights_markdown(level, confidence_text, topic, profile_obj),
-            build_mastery_chart(profile_obj),
-            build_topic_revisit_chart(profile_obj),
-            build_weak_concepts_chart(profile_obj),
-        )
 
-    def clear_chat_legacy(user_state=None):
+        profile_obj = ensure_profile_structure(
+            load_profile(user["id"]) if user else {}
+        )
+        return _pack({
+            "chatbot": chatbot_history,
+            "state": chatbot_history,
+            "followup_context_state": followup_context,
+            "level_box": level,
+            "conf_box": confidence_text,
+            "topic_box": topic,
+            "followup_box": followup_question,
+            "profile_md": profile_markdown,
+            "examples_md": examples_markdown,
+            "insights_md": build_system_insights_markdown(level, confidence_text, topic, profile_obj),
+            "mastery_plot": build_mastery_chart(profile_obj),
+            "revisit_plot": build_topic_revisit_chart(profile_obj),
+            "weak_concept_plot": build_weak_concepts_chart(profile_obj),
+        }, _ASK_KEYS)
+
+    def clear_chat(user_state=None):
         if user_state:
             profile_obj = ensure_profile_structure(load_profile(user_state["id"]))
             profile_markdown = profile_to_markdown(profile_obj)
         else:
             profile_obj = ensure_profile_structure({})
             profile_markdown = ""
-        return (
-            [],
-            [],
-            None,
-            "",
-            "",
-            "",
-            "",
-            profile_markdown,
-            "",
-            "",
-            build_system_insights_markdown(profile=profile_obj),
-            build_mastery_chart(profile_obj),
-            build_topic_revisit_chart(profile_obj),
-            build_weak_concepts_chart(profile_obj),
-        )
+        return _pack({
+            "chatbot": [],
+            "state": [],
+            "followup_context_state": None,
+            "level_box": "",
+            "conf_box": "",
+            "topic_box": "",
+            "followup_box": "",
+            "profile_md": profile_markdown,
+            "examples_md": "",
+            "insights_md": build_system_insights_markdown(profile=profile_obj),
+            "mastery_plot": build_mastery_chart(profile_obj),
+            "revisit_plot": build_topic_revisit_chart(profile_obj),
+            "weak_concept_plot": build_weak_concepts_chart(profile_obj),
+        }, _ASK_KEYS)
 
-    def handle_followup_reply_legacy(user_state, followup_context, learner_reply):
+    def handle_eval_reply(user_state, followup_context, learner_reply):
         evaluation_md, updated_profile_md, status_message = handle_followup_reply(
             user_state, followup_context, learner_reply
         )
-        profile_obj = ensure_profile_structure(load_profile(user_state["id"])) if user_state else ensure_profile_structure({})
+        profile_obj = (
+            ensure_profile_structure(load_profile(user_state["id"]))
+            if user_state else ensure_profile_structure({})
+        )
         topic = followup_context.get("topic", "") if followup_context else ""
         level = followup_context.get("level", "") if followup_context else ""
-        return (
-            evaluation_md,
-            updated_profile_md,
-            status_message,
-            build_system_insights_markdown(level=level, topic=topic, profile=profile_obj),
-            build_mastery_chart(profile_obj),
-            build_topic_revisit_chart(profile_obj),
-            build_weak_concepts_chart(profile_obj),
-        )
+        return _pack({
+            "evaluation_md": evaluation_md,
+            "profile_md": updated_profile_md,
+            "eval_status": status_message,
+            "insights_md": build_system_insights_markdown(level=level, topic=topic, profile=profile_obj),
+            "mastery_plot": build_mastery_chart(profile_obj),
+            "revisit_plot": build_topic_revisit_chart(profile_obj),
+            "weak_concept_plot": build_weak_concepts_chart(profile_obj),
+        }, _EVAL_KEYS)
 
     return build_demo(
-        handle_signup=handle_signup_legacy,
-        handle_login=handle_login_legacy,
-        handle_logout=handle_logout_legacy,
-        ask_eduagent=ask_eduagent_legacy,
-        clear_chat=clear_chat_legacy,
-        handle_followup_reply=handle_followup_reply_legacy,
+        handle_signup=handle_signup,
+        handle_login=handle_login,
+        handle_logout=handle_logout,
+        ask_eduagent=ask_eduagent,
+        clear_chat=clear_chat,
+        handle_followup_reply=handle_eval_reply,
     )

@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-05-09T11:41:29.060428+00:00",
+  "total_accepted": 2400,
+  "total_this_run": 2392,
+  "target_per_cell": 8,
+  "run_limit_rows": 0,
+  "gemini_model": "gemini-2.5-flash",
+  "prompt_version": "eduagent_easy_batch_v2_safe_small_json",
+  "max_candidates_per_call": 4,
+  "csv_file": "data_easy\\eduagent_dataset_easy_v2.csv"
+}

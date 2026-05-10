@@ -45,41 +45,43 @@ def create_profile_if_missing(user_id: int):
             "last_evaluation": {}
         })
 
-        cursor.execute(
-            """
-            INSERT INTO profiles (
-                user_id,
-                sessions,
-                questions_asked,
-                last_level,
-                topics_seen,
-                level_history,
-                topic_counts,
-                weak_areas,
-                mastery,
-                used_explanations,
-                recommended_next_topics,
-                last_evaluation
+        try:
+            cursor.execute(
+                """
+                INSERT INTO profiles (
+                    user_id,
+                    sessions,
+                    questions_asked,
+                    last_level,
+                    topics_seen,
+                    level_history,
+                    topic_counts,
+                    weak_areas,
+                    mastery,
+                    used_explanations,
+                    recommended_next_topics,
+                    last_evaluation
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    user_id,
+                    default_profile["sessions"],
+                    default_profile["questions_asked"],
+                    default_profile["last_level"],
+                    json.dumps(default_profile["topics_seen"]),
+                    json.dumps(default_profile["level_history"]),
+                    json.dumps(default_profile["topic_counts"]),
+                    json.dumps(default_profile["weak_areas"]),
+                    json.dumps(default_profile["mastery"]),
+                    json.dumps(default_profile["used_explanations"]),
+                    json.dumps(default_profile["recommended_next_topics"]),
+                    json.dumps(default_profile["last_evaluation"])
+                )
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                user_id,
-                default_profile["sessions"],
-                default_profile["questions_asked"],
-                default_profile["last_level"],
-                json.dumps(default_profile["topics_seen"]),
-                json.dumps(default_profile["level_history"]),
-                json.dumps(default_profile["topic_counts"]),
-                json.dumps(default_profile["weak_areas"]),
-                json.dumps(default_profile["mastery"]),
-                json.dumps(default_profile["used_explanations"]),
-                json.dumps(default_profile["recommended_next_topics"]),
-                json.dumps(default_profile["last_evaluation"])
-            )
-        )
-
-        conn.commit()
+            conn.commit()
+        except Exception:
+            conn.rollback()
 
     conn.close()
 
@@ -178,30 +180,30 @@ def save_profile(user_id: int, profile: dict):
 def create_user(name: str, username: str, email: str, password_hash: str):
     """
     Create a user row in the current users schema.
-    `username` is accepted for compatibility but not stored in this schema.
+    Supports both the older users.user_id schema and the newer users.id schema.
     """
-    _ = username
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("PRAGMA table_info(users)")
     user_cols = {row["name"] for row in cursor.fetchall()}
+
+    fields = ["name", "email", "password_hash"]
+    values = [name, email, password_hash]
+    if "username" in user_cols:
+        fields.insert(1, "username")
+        values.insert(1, username)
+    if "created_at" in user_cols:
+        fields.append("created_at")
+        values.append(datetime.utcnow().isoformat() + "Z")
+
+    placeholders = ", ".join("?" for _ in fields)
+    columns = ", ".join(fields)
+
     try:
-        if {"name", "email", "password_hash", "created_at"}.issubset(user_cols):
-            cursor.execute(
-                """
-                INSERT INTO users (name, username, email, password_hash, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (name, username, email, password_hash, datetime.utcnow().isoformat() + "Z"),
-            )
-        else:
-            cursor.execute(
-                """
-                INSERT INTO users (name, email, password_hash)
-                VALUES (?, ?, ?)
-                """,
-                (name, email, password_hash),
-            )
+        cursor.execute(
+            f"INSERT INTO users ({columns}) VALUES ({placeholders})",
+            values,
+        )
         user_id = cursor.lastrowid
         conn.commit()
     except Exception:
@@ -214,29 +216,34 @@ def create_user(name: str, username: str, email: str, password_hash: str):
 
 def get_user_by_identifier(identifier: str):
     """
-    Fetch user by email (identifier kept generic for compatibility).
+    Fetch user by email or username when the schema supports usernames.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("PRAGMA table_info(users)")
     user_cols = {row["name"] for row in cursor.fetchall()}
-    if "user_id" in user_cols:
+
+    pk_column = "id" if "id" in user_cols else "user_id"
+    optional_columns = [column for column in ("username", "created_at") if column in user_cols]
+    selected_columns = ", ".join([pk_column, "name", *optional_columns, "email", "password_hash"])
+
+    if "username" in user_cols:
         cursor.execute(
-            """
-            SELECT user_id, name, username, email, password_hash, created_at
+            f"""
+            SELECT {selected_columns}
             FROM users
-            WHERE email = ? OR username = ?
+            WHERE email = ? OR username = ? OR lower(name) = ?
             """,
-            (identifier, identifier),
+            (identifier, identifier, identifier),
         )
     else:
         cursor.execute(
-            """
-            SELECT id, name, email, password_hash
+            f"""
+            SELECT {selected_columns}
             FROM users
-            WHERE email = ?
+            WHERE email = ? OR lower(name) = ?
             """,
-            (identifier,),
+            (identifier, identifier),
         )
     row = cursor.fetchone()
     conn.close()

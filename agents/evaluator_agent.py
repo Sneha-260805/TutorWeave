@@ -49,6 +49,12 @@ def generate_followup_question(user_question: str, tutor_answer: str, level: str
     """
     Generate one short conceptual follow-up question to test learner understanding.
     """
+    fallback_question = (
+        "In your own words, what is the main idea from the explanation?"
+    )
+    if "live tutor model is taking too long" in (tutor_answer or "").lower():
+        return fallback_question
+
     prompt = f"""
 You are an evaluator for an adaptive AI tutor.
 
@@ -69,10 +75,6 @@ Rules:
 - Keep it short and clear.
 - Return only the question.
 """
-
-    fallback_question = (
-        "In your own words, what is the main idea from the explanation?"
-    )
 
     return complete_chat(
         [{"role": "user", "content": prompt}],

@@ -2,9 +2,9 @@ from typing import Dict, List
 
 
 MASTERY_INITIAL_SCORE = 0.5
-MASTERY_DELTA_GOOD = 0.10
-MASTERY_DELTA_PARTIAL = -0.05
-MASTERY_DELTA_POOR = -0.15
+MASTERY_GAIN_RATE = 0.20   # good: gain = RATE * (1 - current), so gains shrink near 1.0
+MASTERY_DELTA_PARTIAL = -0.06
+MASTERY_DELTA_POOR = -0.18
 
 
 def _safe_mastery_score(value, default: float = MASTERY_INITIAL_SCORE) -> float:
@@ -99,7 +99,8 @@ def update_profile_after_evaluation(profile: Dict, topic: str, evaluation: Dict)
     current_mastery = _safe_mastery_score(profile["mastery"].get(topic, MASTERY_INITIAL_SCORE))
 
     if understanding == "good":
-        current_mastery = min(1.0, current_mastery + MASTERY_DELTA_GOOD)
+        # Diminishing returns: gain shrinks as mastery approaches 1.0
+        current_mastery = min(1.0, current_mastery + MASTERY_GAIN_RATE * (1.0 - current_mastery))
     elif understanding == "partial":
         current_mastery = max(0.0, current_mastery + MASTERY_DELTA_PARTIAL)
     else:  # poor

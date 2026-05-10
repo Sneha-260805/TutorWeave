@@ -2,6 +2,11 @@ from auth.password_utils import hash_password, verify_password
 from db.profile_repository import create_user, get_user_by_identifier
 
 
+def _is_valid_email(email: str) -> bool:
+    parts = email.split("@")
+    return len(parts) == 2 and parts[0] and "." in parts[1] and parts[1].split(".")[-1]
+
+
 def register_user(name, username, email, password):
     name = (name or "").strip()
     username = (username or "").strip().lower() or None
@@ -9,6 +14,8 @@ def register_user(name, username, email, password):
     password = password or ""
     if not name or not email or len(password) < 6:
         return False, "Name, email, and password (min 6 chars) are required."
+    if not _is_valid_email(email):
+        return False, "Please enter a valid email address."
 
     password_hash = hash_password(password)
     user_id = create_user(name, username, email, password_hash)

@@ -1,129 +1,239 @@
+"""
+Semantic retrieval using sentence-transformers (all-MiniLM-L6-v2).
+
+Each unique (level, topic) slice of the dataset is encoded once and cached in
+memory. At query time only the user question is encoded — O(1) model calls per
+query regardless of dataset size.
+
+Falls back to TF-IDF cosine similarity if sentence-transformers is not
+installed, so the app still works without the extra dependency.
+"""
+import logging
+import os
+
+os.environ.setdefault("USE_TF", "0")
+
+import numpy as np
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
 from config.settings import DATASET_FILE
 from ml.topic_detector import clean_text, detect_best_topic, expand_topic_aliases
+from ml.embedder import embed_model as _embed_model, semantic_available as _semantic_available
 
+logger = logging.getLogger(__name__)
 
+if _semantic_available:
+    logger.info("Semantic retrieval: using shared all-MiniLM-L6-v2 embedder.")
+else:
+    logger.warning("sentence-transformers not available. Retrieval falling back to TF-IDF.")
+
+# ---------------------------------------------------------------------------
+# Dataset — loaded once at import, shared with tutor_agent via `df`
+# ---------------------------------------------------------------------------
 df = pd.read_csv(DATASET_FILE)
-_RETRIEVAL_INDEX_CACHE = {}
+
+# ---------------------------------------------------------------------------
+# Index cache  {(n_rows, level, topic): (filtered_df, vectors)}
+# ---------------------------------------------------------------------------
+_INDEX_CACHE: dict = {}
 
 
-def filter_by_level(df_level, level):
-    df_level = df_level.copy()
-    df_level["answer_length"] = df_level["answer"].apply(lambda x: len(str(x).split()))
+# ---------------------------------------------------------------------------
+# Helpers shared with both backends
+# ---------------------------------------------------------------------------
 
+def filter_by_level(df_in: pd.DataFrame, level: str) -> pd.DataFrame:
+    df_in = df_in.copy()
+    df_in["answer_length"] = df_in["answer"].apply(lambda x: len(str(x).split()))
     if level == "beginner":
-        return df_level[df_level["answer_length"] < 80]
+        return df_in[df_in["answer_length"] < 80]
     if level == "intermediate":
-        return df_level[(df_level["answer_length"] >= 40) & (df_level["answer_length"] <= 110)]
+        return df_in[(df_in["answer_length"] >= 40) & (df_in["answer_length"] <= 110)]
     if level == "advanced":
-        return df_level[df_level["answer_length"] > 80]
-    return df_level
+        return df_in[df_in["answer_length"] > 80]
+    return df_in
 
 
-def question_complexity_penalty(text):
+def _complexity_penalty(text: str) -> float:
     text = clean_text(text)
     penalty = 0.0
-    complex_words = [
-        "derive", "proof", "prove", "theorem", "theoretical",
-        "high dimensional", "non differentiable", "quasi newton",
-        "convergence", "subgradient", "vanishing gradient",
-        "multivariate", "recurrent neural networks",
-    ]
+    hard_terms = {
+        "derive", "proof", "prove", "theorem", "convergence",
+        "subgradient", "vanishing gradient", "quasi newton",
+        "non differentiable", "high dimensional",
+    }
     if len(text.split()) > 18:
         penalty += 0.15
-    for word in complex_words:
-        if word in text:
+    for term in hard_terms:
+        if term in text:
             penalty += 0.15
     return penalty
 
 
-def _retrieval_cache_key(level: str, topic: str | None):
-    return (
-        len(df),
-        str(level).strip().lower(),
-        str(topic).strip().lower() if topic is not None else "",
-    )
+def _cache_key(level: str, topic: str | None) -> tuple:
+    return (len(df), level.strip().lower(), (topic or "").strip().lower())
 
 
-def _build_retrieval_index(level: str, best_topic: str | None):
+def _filter_slice(level: str, topic: str | None) -> pd.DataFrame:
+    """Return the dataset slice for this level/topic pair."""
     filtered = df[df["level"].astype(str).str.lower() == level].copy()
-
-    if best_topic is not None:
-        topic_filtered = filtered[
-            filtered["topic"].astype(str).str.lower() == str(best_topic).lower()
-        ].copy()
-        if len(topic_filtered) > 0:
-            filtered = topic_filtered
-
-    if len(filtered) == 0:
-        return filtered, None, None
-
+    if topic:
+        by_topic = filtered[filtered["topic"].astype(str).str.lower() == topic.lower()]
+        if len(by_topic) > 0:
+            filtered = by_topic
     filtered = filter_by_level(filtered, level)
-
     if len(filtered) == 0:
+        # Relax length filter and retry
         filtered = df[df["level"].astype(str).str.lower() == level].copy()
-        if best_topic is not None:
-            topic_filtered = filtered[
-                filtered["topic"].astype(str).str.lower() == str(best_topic).lower()
-            ].copy()
-            if len(topic_filtered) > 0:
-                filtered = topic_filtered
+        if topic:
+            by_topic = filtered[filtered["topic"].astype(str).str.lower() == topic.lower()]
+            if len(by_topic) > 0:
+                filtered = by_topic
+    return filtered.reset_index(drop=True)
 
+
+# ---------------------------------------------------------------------------
+# Semantic backend (sentence-transformers)
+# ---------------------------------------------------------------------------
+
+def _build_semantic_index(level: str, topic: str | None):
+    filtered = _filter_slice(level, topic)
     if len(filtered) == 0:
-        return filtered, None, None
-
-    filtered["clean_question"] = filtered["question"].apply(clean_text)
-    filtered["penalty"] = filtered["question"].apply(question_complexity_penalty)
-
-    vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words="english")
-    dataset_matrix = vectorizer.fit_transform(filtered["clean_question"].tolist())
-    return filtered.reset_index(drop=True), vectorizer, dataset_matrix
+        return filtered, None
+    questions = filtered["question"].tolist()
+    vectors = _embed_model.encode(questions, convert_to_numpy=True, show_progress_bar=False)
+    filtered["penalty"] = filtered["question"].apply(_complexity_penalty)
+    return filtered, vectors
 
 
-def get_retrieval_index(level: str, topic: str | None):
-    key = _retrieval_cache_key(level, topic)
-    if key not in _RETRIEVAL_INDEX_CACHE:
-        _RETRIEVAL_INDEX_CACHE[key] = _build_retrieval_index(level, topic)
-    return _RETRIEVAL_INDEX_CACHE[key]
+def _semantic_retrieve(user_question: str, level: str, topic: str | None, top_n: int):
+    key = _cache_key(level, topic)
+    if key not in _INDEX_CACHE:
+        _INDEX_CACHE[key] = _build_semantic_index(level, topic)
+    filtered, vectors = _INDEX_CACHE[key]
 
-
-def retrieve_examples(user_question, level, top_n=2):
-    """
-    Retrieve examples using a cached lexical retrieval index.
-
-    This is intentionally described as TF-IDF example retrieval, not full dense
-    vector RAG. The index is built once per level/topic and reused across
-    queries to avoid repeated vectorizer fitting.
-    """
-    level = str(level).strip().lower()
-    user_question_clean = expand_topic_aliases(clean_text(user_question))
-
-    best_topic = detect_best_topic(user_question, level, df)
-    filtered, vectorizer, dataset_vecs = get_retrieval_index(level, best_topic)
-
-    if len(filtered) == 0 or vectorizer is None or dataset_vecs is None:
+    if len(filtered) == 0 or vectors is None:
         return pd.DataFrame(columns=["question", "answer", "level", "topic"])
 
-    user_vec = vectorizer.transform([user_question_clean])
-    sims = cosine_similarity(user_vec, dataset_vecs).flatten()
+    user_vec = _embed_model.encode([user_question], convert_to_numpy=True)
+    sims = cosine_similarity(user_vec, vectors).flatten()
+
     scored = filtered.copy()
     scored["similarity"] = sims
-
     scored["final_score"] = scored["similarity"] - scored["penalty"]
+    scored = scored.sort_values("final_score", ascending=False)
+    return scored.head(top_n)[["question", "answer", "level", "topic"]]
 
-    scored = scored.sort_values(by="final_score", ascending=False)
-    top_examples = scored.head(top_n).copy()
 
-    if len(top_examples) == 0:
-        fallback = df[df["level"].astype(str).str.lower() == level].copy()
-        if best_topic is not None:
-            fallback_topic = fallback[
-                fallback["topic"].astype(str).str.lower() == str(best_topic).lower()
-            ].copy()
-            if len(fallback_topic) > 0:
-                fallback = fallback_topic
-        top_examples = fallback.sample(min(top_n, len(fallback)), random_state=42)
+# ---------------------------------------------------------------------------
+# TF-IDF fallback backend
+# ---------------------------------------------------------------------------
 
-    return top_examples[["question", "answer", "level", "topic"]]
+def _build_tfidf_index(level: str, topic: str | None):
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    filtered = _filter_slice(level, topic)
+    if len(filtered) == 0:
+        return filtered, None, None
+    filtered["clean_question"] = filtered["question"].apply(clean_text)
+    filtered["penalty"] = filtered["question"].apply(_complexity_penalty)
+    vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words="english")
+    matrix = vectorizer.fit_transform(filtered["clean_question"].tolist())
+    return filtered, vectorizer, matrix
+
+
+def _tfidf_retrieve(user_question: str, level: str, topic: str | None, top_n: int):
+    key = ("tfidf", *_cache_key(level, topic))
+    if key not in _INDEX_CACHE:
+        _INDEX_CACHE[key] = _build_tfidf_index(level, topic)
+    filtered, vectorizer, matrix = _INDEX_CACHE[key]
+
+    if len(filtered) == 0 or vectorizer is None:
+        return pd.DataFrame(columns=["question", "answer", "level", "topic"])
+
+    user_vec = vectorizer.transform([expand_topic_aliases(clean_text(user_question))])
+    sims = cosine_similarity(user_vec, matrix).flatten()
+
+    scored = filtered.copy()
+    scored["similarity"] = sims
+    scored["final_score"] = scored["similarity"] - scored["penalty"]
+    scored = scored.sort_values("final_score", ascending=False)
+    return scored.head(top_n)[["question", "answer", "level", "topic"]]
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+def retrieve_for_weak_areas(
+    weak_concepts: list,
+    topic: str,
+    level: str,
+    top_n: int = 2,
+    exclude_questions: set = None,
+) -> pd.DataFrame:
+    """
+    Retrieve dataset examples most relevant to the learner's recorded weak concepts.
+
+    Each weak concept string is used as a query against the same semantic index
+    used for normal retrieval. Results across all concepts are pooled, de-duplicated,
+    re-ranked by best similarity, and the top-N returned.
+
+    exclude_questions: set of question strings already returned by retrieve_examples,
+    so we don't repeat the same rows.
+    """
+    if not weak_concepts:
+        return pd.DataFrame(columns=["question", "answer", "level", "topic"])
+
+    exclude_questions = exclude_questions or set()
+    level = str(level).strip().lower()
+
+    all_scored = []
+
+    for concept in weak_concepts:
+        query = f"{concept} {topic}".strip()
+        try:
+            if _semantic_available:
+                result = _semantic_retrieve(query, level, topic, top_n=top_n + 2)
+            else:
+                result = _tfidf_retrieve(query, level, topic, top_n=top_n + 2)
+            if len(result) > 0:
+                all_scored.append(result)
+        except Exception:
+            continue
+
+    if not all_scored:
+        return pd.DataFrame(columns=["question", "answer", "level", "topic"])
+
+    pooled = pd.concat(all_scored, ignore_index=True)
+    pooled = pooled.drop_duplicates(subset=["question"])
+    pooled = pooled[~pooled["question"].isin(exclude_questions)]
+
+    if len(pooled) == 0:
+        return pd.DataFrame(columns=["question", "answer", "level", "topic"])
+
+    return pooled.head(top_n)[["question", "answer", "level", "topic"]]
+
+
+def retrieve_examples(user_question: str, level: str, top_n: int = 2) -> pd.DataFrame:
+    """
+    Retrieve the top-N most semantically similar examples for the given question.
+
+    Uses sentence-transformers (all-MiniLM-L6-v2) dense embeddings when
+    available, falling back to TF-IDF cosine similarity otherwise.
+    """
+    level = str(level).strip().lower()
+    topic = detect_best_topic(user_question, level, df)
+
+    if _semantic_available:
+        results = _semantic_retrieve(user_question, level, topic, top_n)
+    else:
+        results = _tfidf_retrieve(user_question, level, topic, top_n)
+
+    if len(results) == 0:
+        fallback = df[df["level"].astype(str).str.lower() == level]
+        results = fallback.sample(min(top_n, len(fallback)), random_state=42)[
+            ["question", "answer", "level", "topic"]
+        ]
+
+    return results

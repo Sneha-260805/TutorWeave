@@ -421,6 +421,7 @@ def build_demo(
         )
         auth_status = gr.Markdown("", elem_classes=["auth-status"])
         user_state = gr.State(None)
+        logged_in = gr.State(False)
         state = gr.State([])
         followup_context_state = gr.State(None)
 
@@ -451,17 +452,18 @@ def build_demo(
                     )
                 with gr.Column(scale=4, min_width=360):
                     with gr.Group(elem_classes=["auth-card"]):
-                        with gr.Tab("Login"):
-                            login_identifier = gr.Textbox(label="Email or Username")
-                            login_password = gr.Textbox(label="Password", type="password")
-                            login_btn = gr.Button("Login", variant="primary")
+                        with gr.Tabs(selected=0) as auth_tabs:
+                            with gr.Tab("Login", id=0):
+                                login_identifier = gr.Textbox(label="Email, Username, or Name")
+                                login_password = gr.Textbox(label="Password", type="password")
+                                login_btn = gr.Button("Login", variant="primary")
 
-                        with gr.Tab("Signup"):
-                            signup_name = gr.Textbox(label="Full Name")
-                            signup_username = gr.Textbox(label="Username (optional)")
-                            signup_email = gr.Textbox(label="Email")
-                            signup_password = gr.Textbox(label="Password (min 6 chars)", type="password")
-                            signup_btn = gr.Button("Create Account")
+                            with gr.Tab("Signup", id=1):
+                                signup_name = gr.Textbox(label="Full Name")
+                                signup_username = gr.Textbox(label="Username (optional)")
+                                signup_email = gr.Textbox(label="Email")
+                                signup_password = gr.Textbox(label="Password (min 6 chars)", type="password")
+                                signup_btn = gr.Button("Create Account")
 
         with gr.Column(visible=False, elem_classes=["app-section"]) as app_section:
             with gr.Row(elem_classes=["topbar"]):
@@ -572,47 +574,68 @@ def build_demo(
                                             elem_classes=["scroll-panel", "examples-panel"],
                                         )
 
+        _ask_outputs = [
+            chatbot, state, followup_context_state, level_box, conf_box, topic_box, followup_box,
+            profile_md, examples_md, insights_md, mastery_plot, revisit_plot, weak_concept_plot,
+        ]
+
         signup_btn.click(
             fn=handle_signup,
             inputs=[signup_name, signup_username, signup_email, signup_password],
-            outputs=[auth_status, signup_name, signup_username, signup_email, signup_password],
+            outputs=[auth_status, signup_name, signup_username, signup_email, signup_password, auth_tabs, login_identifier],
         )
 
         login_btn.click(
             fn=handle_login,
             inputs=[login_identifier, login_password],
             outputs=[
-                auth_status, user_state, welcome_md, chatbot, state, level_box, conf_box, topic_box,
+                auth_status, logged_in, user_state, welcome_md, chatbot, state, level_box, conf_box, topic_box,
                 profile_md, insights_md, mastery_plot, revisit_plot, weak_concept_plot, auth_section, app_section,
+                followup_context_state,
             ],
+        ).then(
+            fn=lambda is_logged_in: (gr.update(visible=not is_logged_in), gr.update(visible=is_logged_in)),
+            inputs=[logged_in],
+            outputs=[auth_section, app_section],
         ).then(fn=lambda: ("", ""), inputs=None, outputs=[login_identifier, login_password])
 
         logout_btn.click(
             fn=handle_logout,
             inputs=None,
             outputs=[
-                auth_status, user_state, welcome_md, chatbot, state, level_box, conf_box, topic_box,
+                auth_status, logged_in, user_state, welcome_md, chatbot, state, level_box, conf_box, topic_box,
                 profile_md, insights_md, mastery_plot, revisit_plot, weak_concept_plot, auth_section, app_section,
+                followup_context_state,
             ],
         )
 
         ask_btn.click(
+            fn=lambda: gr.update(value="Thinking...", interactive=False),
+            inputs=None,
+            outputs=[ask_btn],
+        ).then(
             fn=ask_eduagent,
             inputs=[user_input, state, user_state],
-            outputs=[
-                chatbot, state, followup_context_state, level_box, conf_box, topic_box, followup_box,
-                profile_md, examples_md, insights_md, mastery_plot, revisit_plot, weak_concept_plot,
-            ],
-        ).then(fn=lambda: "", inputs=None, outputs=[user_input])
+            outputs=_ask_outputs,
+        ).then(
+            fn=lambda: (gr.update(value="Ask EduAgent", interactive=True), ""),
+            inputs=None,
+            outputs=[ask_btn, user_input],
+        )
 
         user_input.submit(
+            fn=lambda: gr.update(value="Thinking...", interactive=False),
+            inputs=None,
+            outputs=[ask_btn],
+        ).then(
             fn=ask_eduagent,
             inputs=[user_input, state, user_state],
-            outputs=[
-                chatbot, state, followup_context_state, level_box, conf_box, topic_box, followup_box,
-                profile_md, examples_md, insights_md, mastery_plot, revisit_plot, weak_concept_plot,
-            ],
-        ).then(fn=lambda: "", inputs=None, outputs=[user_input])
+            outputs=_ask_outputs,
+        ).then(
+            fn=lambda: (gr.update(value="Ask EduAgent", interactive=True), ""),
+            inputs=None,
+            outputs=[ask_btn, user_input],
+        )
 
         if handle_followup_reply is not None:
             eval_btn.click(
@@ -624,131 +647,8 @@ def build_demo(
         clear_btn.click(
             fn=clear_chat,
             inputs=[user_state],
-            outputs=[
-                chatbot, state, followup_context_state, level_box, conf_box, topic_box, followup_box,
-                profile_md, examples_md, insights_md, mastery_plot, revisit_plot, weak_concept_plot,
-            ],
+            outputs=_ask_outputs,
         ).then(fn=lambda: ("", "", "No evaluation yet."), inputs=None, outputs=[followup_reply, eval_status, evaluation_md])
     return demo
 
 
-def build_ui(
-    handle_signup,
-    handle_login,
-    handle_logout,
-    handle_question,
-    handle_followup_reply,
-    clear_chat_and_followup,
-):
-    """
-    UI builder expected by app.main handlers.
-    """
-    with gr.Blocks() as demo:
-        gr.HTML(
-            """
-            <div class="main-title">EduAgent - Adaptive AI Tutor</div>
-            <div class="sub-title">Learner-aware tutoring with difficulty detection, retrieval, and follow-up evaluation</div>
-            """
-        )
-        auth_status = gr.Markdown("")
-        user_state = gr.State(None)
-        logged_in = gr.State(False)
-        chat_state = gr.State([])
-        followup_context = gr.State(None)
-
-        with gr.Column(visible=True) as auth_section:
-            signup_name = gr.Textbox(label="Full Name")
-            signup_email = gr.Textbox(label="Email")
-            signup_password = gr.Textbox(label="Password", type="password")
-            signup_btn = gr.Button("Create Account")
-
-            login_email = gr.Textbox(label="Login Email")
-            login_password = gr.Textbox(label="Login Password", type="password")
-            login_btn = gr.Button("Login", variant="primary")
-
-        with gr.Column(visible=False) as app_section:
-            welcome_md = gr.Markdown("")
-            logout_btn = gr.Button("Logout")
-
-            chatbot = gr.Chatbot(label="Tutor Conversation", height=420)
-            user_input = gr.Textbox(label="Ask your AI/ML question", lines=3)
-            ask_btn = gr.Button("Ask EduAgent", variant="primary")
-
-            followup_reply = gr.Textbox(label="Reply to follow-up question", lines=3)
-            eval_btn = gr.Button("Evaluate Reply")
-
-            clear_btn = gr.Button("Clear Chat")
-
-            level_box = gr.Textbox(label="Detected Level", interactive=False)
-            conf_box = gr.Textbox(label="Confidence Scores", interactive=False)
-            topic_box = gr.Textbox(label="Detected Topic", interactive=False)
-            answer_box = gr.Textbox(label="Tutor Answer", lines=6, interactive=False)
-            followup_box = gr.Textbox(label="Follow-up Question", lines=3, interactive=False)
-            examples_md = gr.Markdown()
-            profile_md = gr.Markdown()
-            evaluation_md = gr.Markdown()
-            status_box = gr.Markdown()
-
-        signup_btn.click(
-            fn=handle_signup,
-            inputs=[signup_name, signup_email, signup_password],
-            outputs=[auth_status],
-        )
-
-        login_btn.click(
-            fn=handle_login,
-            inputs=[login_email, login_password],
-            outputs=[logged_in, user_state, welcome_md, profile_md, auth_status],
-        ).then(
-            fn=lambda is_logged_in: (gr.update(visible=not is_logged_in), gr.update(visible=is_logged_in)),
-            inputs=[logged_in],
-            outputs=[auth_section, app_section],
-        )
-
-        logout_btn.click(
-            fn=handle_logout,
-            inputs=None,
-            outputs=[logged_in, user_state, welcome_md, profile_md, auth_status],
-        ).then(
-            fn=lambda: (gr.update(visible=True), gr.update(visible=False), [], None, "", "", "", "", "", "", ""),
-            inputs=None,
-            outputs=[auth_section, app_section, chatbot, followup_context, level_box, conf_box, topic_box, answer_box, followup_box, examples_md, evaluation_md],
-        )
-
-        ask_btn.click(
-            fn=handle_question,
-            inputs=[user_state, chat_state, user_input],
-            outputs=[
-                chatbot, followup_context, level_box, conf_box, topic_box, answer_box,
-                followup_box, examples_md, profile_md, evaluation_md, status_box,
-            ],
-        ).then(
-            fn=lambda chat: (chat, ""),
-            inputs=[chatbot],
-            outputs=[chat_state, user_input],
-        )
-
-        eval_btn.click(
-            fn=handle_followup_reply,
-            inputs=[user_state, followup_context, followup_reply],
-            outputs=[evaluation_md, profile_md, status_box],
-        ).then(
-            fn=lambda: "",
-            inputs=None,
-            outputs=[followup_reply],
-        )
-
-        clear_btn.click(
-            fn=clear_chat_and_followup,
-            inputs=[user_state],
-            outputs=[
-                chatbot, followup_context, level_box, conf_box, topic_box, answer_box,
-                followup_box, examples_md, profile_md, evaluation_md, status_box,
-            ],
-        ).then(
-            fn=lambda chat: chat,
-            inputs=[chatbot],
-            outputs=[chat_state],
-        )
-
-    return demo

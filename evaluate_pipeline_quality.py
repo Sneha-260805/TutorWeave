@@ -48,7 +48,7 @@ def run_eval(output_path: Path):
     records = []
 
     for case in EVAL_CASES:
-        level, confidence, topic, examples, answer = generate_tutor_response(
+        level, confidence, topic, examples, weak_examples, answer, teaching_mode = generate_tutor_response(
             case["question"],
             case["profile"],
         )

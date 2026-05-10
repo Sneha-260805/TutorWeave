@@ -1,0 +1,241 @@
+question,level,label_id
+"How do memory consumption and computational complexity scale with dataset size when performing hierarchical clustering, and what are the implications?",intermediate,1
+How does the choice between Stochastic Gradient Descent (SGD) and Adam specifically alter the weight update mechanism during backpropagation?,intermediate,1
+"When implementing Chain-of-Thought prompting, what are key considerations for designing effective intermediate reasoning steps?",intermediate,1
+"How can an agent's feedback loop be engineered to maintain stability and prevent catastrophic divergence when faced with intermittent feedback, sudden environmental shifts, or sensor degradation that introduces significant data corruption?",advanced,2
+"How do phenomena like dataset shift or concept drift fundamentally compromise the long-term validity of a machine learning model's initial accuracy evaluation, necessitating adaptive strategies?",advanced,2
+"How do automatic differentiation frameworks leverage the chain rule to compute gradients efficiently, and what advantages does this offer over manual derivative calculation for complex models?",intermediate,1
+Do all neurons in a neural network typically use the same type of activation function?,beginner,0
+"When designing an RNN for a sequence-to-sequence task, what trade-offs should be considered regarding the dimensionality of the hidden state versus computational cost and model capacity?",intermediate,1
+"How does the choice of a specific utility function, particularly one incorporating risk sensitivity, fundamentally influence the optimal policy derived by an agent planning in highly stochastic and uncertain environments, potentially leading to sub-optimal expected reward but increased safety?",advanced,2
+How can we tell if gradient descent is successfully converging during model training?,beginner,0
+"In a large-scale deployment scenario with continuously evolving data, what are the architectural and computational challenges of managing and updating models that heavily rely on frozen layers from a foundational pre-trained model?",advanced,2
+"When building a vector database for a specialized domain, what factors should guide the choice between using a general-purpose pre-trained embedding model and fine-tuning one?",intermediate,1
+"Under what specific data distribution shifts or adversarial attack scenarios might the learned internal state representations of an LSTM become brittle, leading to catastrophic forgetting or misclassification, and how can this be addressed?",advanced,2
+How might visualizing the activations of feature maps in different layers help diagnose issues like vanishing gradients or dead neurons in a CNN?,intermediate,1
+"How does using a separate testing set help us know if a model will work well on new, unseen information?",beginner,0
+"What are the theoretical limitations of current end-to-end deep learning approaches for image classification in terms of interpretability and explainability, particularly when attempting to understand the specific features driving a classification decision?",advanced,2
+"In a highly non-convex loss landscape with varying gradient magnitudes, why might a single global learning rate prove inefficient for effective optimization?",intermediate,1
+"When might a rule-based tokenizer be preferred over a statistical tokenizer, despite its apparent rigidity?",intermediate,1
+How can noisy data or outliers negatively impact the reliability of internal cluster validation metrics?,intermediate,1
+"How does the greedy nature of decision tree algorithms, relying on information gain at each step, potentially lead to suboptimal global trees?",intermediate,1
+"When designing a system for real-time node classification on evolving graphs, what are the key challenges in adapting static GNN architectures, and what architectural modifications are often considered?",advanced,2
+"Is chunking just about splitting text by paragraphs, or is there more to it?",beginner,0
+"When evaluating a model across a vast, heterogeneous dataset with varying class distributions, what scalability challenges arise in consistently interpreting and comparing precision and recall scores?",advanced,2
+What are the primary practical differences and trade-offs between using static word embeddings and contextualized embeddings for downstream NLP tasks?,intermediate,1
+What are the consequences if a GAN's discriminator becomes significantly more powerful than its generator too early in training?,intermediate,1
+"How does the choice of distance metric (e.g., Euclidean vs. Cosine) influence the effectiveness and construction of a vector index?",intermediate,1
+"How does the presence of noisy labels in the training data specifically affect the outcome of decision tree pruning, and what evaluation metric might be particularly misleading?",intermediate,1
+"When a convolution filter scans an image, what kind of output does it produce for each position?",beginner,0
+"For models deployed on extremely large-scale datasets generating billions of predictions, what are the primary computational and storage challenges in constructing and interpreting a full confusion matrix, and what distributed or sampling strategies are typically employed to overcome these limitations?",advanced,2
+"When integrating graph embeddings into a critical decision-making system, what advanced validation metrics and methodologies are essential to rigorously assess the robustness and fairness of the learned representations across diverse graph substructures and demographic groups?",advanced,2
+"Explain the theoretical underpinnings of why attention mechanisms significantly improve sequence modeling performance over traditional RNNs or LSTMs, from a probabilistic perspective?",advanced,2
+How does mode collapse prevent a GAN from creating truly novel and varied data?,beginner,0
+"If an RL agent consistently struggles to learn a desired behavior, how would you systematically debug the reward signal's design?",intermediate,1
+When is freezing early layers and retraining later layers in a pre-trained model more effective for a new task?,intermediate,1
+"How does the choice of f-divergence in f-GANs theoretically influence the propensity for mode collapse compared to the original GAN objective, particularly regarding gradient properties and density coverage?",advanced,2
+"If I don't add any specific constraints to my prompt, will the AI always give me a perfect answer?",beginner,0
+"How does the selection and ordering of examples in a few-shot prompt impact model performance, and what strategies can mitigate sensitivity?",intermediate,1
+How does Monte Carlo Dropout extend standard dropout to enable uncertainty estimation during model inference?,intermediate,1
+A supervised classification model performs well on training data but poorly on unseen test data. What common issues might be causing this discrepancy and how would you investigate them?,intermediate,1
+Imagine a Transformer model translating a sentence; what role does the encoder play before the decoder starts its work?,beginner,0
+"How do temporal credit assignment problems manifest in environments with exceptionally long horizons and significantly delayed rewards, and what advanced algorithmic mechanisms, beyond simple n-step returns, are employed to efficiently attribute actions to their distant outcomes?",advanced,2
+Can you compare adversarial training to a simple real-world scenario?,beginner,0
+"What are the key scalability challenges when integrating a sophisticated discriminator into a real-time generative AI pipeline, and how do these impact system performance metrics like throughput and latency?",advanced,2
+"When a multiclass model predicts, can it ever be equally confident about two different categories for the same input?",beginner,0
+"What does ""responsible AI"" truly mean in simple terms?",beginner,0
+"Beyond sample efficiency, what theoretical implications arise when applying off-policy reinforcement learning algorithms with function approximation in non-stationary environments, particularly concerning convergence guarantees?",advanced,2
+"If a fraud detection model yields a low F1 score, how would you interpret this result to guide your debugging process?",intermediate,1
+"If you have a 2x2 grid of numbers, how would max pooling pick a single number from it?",beginner,0
+How does the chain rule help us understand the impact of a small change in one part of a neural network on its final output?,beginner,0
+"What is a decision boundary in machine learning classification, and what does it represent?",beginner,0
+"How does a sequence model predict the next word in a sentence, like completing ""I want to eat a delicious..."" with ""pizza""?",beginner,0
+"If a decision tree splits data randomly without considering information gain, what might be the main problem with the resulting tree?",beginner,0
+"If a Transformer's encoder-decoder is like a chef preparing a meal, what part does the chef represent, and what does the waiter do?",beginner,0
+"How does the size and domain specificity of the training corpus impact the quality and representational power of static word embeddings, especially for rare terms?",intermediate,1
+"What computational challenges arise when determining optimal decision boundaries for non-linear, high-dimensional datasets with millions of samples, and how are these typically addressed in practice?",advanced,2
+"In safety-critical applications, how can supervised learning models be designed to detect and gracefully handle adversarial attacks or novel, out-of-distribution inputs, ensuring robust performance?",advanced,2
+"How do different dataset bias mitigation strategies, such as pre-processing re-sampling or in-processing adversarial debiasing, fundamentally alter the statistical properties of the training data and impact the model's generalization capabilities?",advanced,2
+"When designing an agent, what considerations guide the choice between using a simple episodic memory versus a more complex semantic memory system?",intermediate,1
+"If a neural network's early layers aren't learning due to vanishing gradients, what's the main problem this causes for the overall model?",beginner,0
+"If a complex deep learning model achieves near-perfect accuracy on its training set but significantly lower performance on the validation set, what are the most immediate diagnostic steps to confirm overfitting?",intermediate,1
+"In transformer architectures employing sparse attention mechanisms, how does the design choice of positional encoding influence the model's ability to effectively capture long-range dependencies while maintaining computational efficiency?",advanced,2
+"Beyond standard first-order optimization, what are the theoretical implications and practical challenges of employing second-order methods for weight updates in deep learning, considering their computational complexity and memory footprint?",advanced,2
+"When inferring a reward function using Inverse Reinforcement Learning from noisy or suboptimal expert demonstrations, what theoretical challenges arise in uniquely identifying the true underlying reward, and how do these impact policy generalization?",advanced,2
+How does an AI agent decide which tool to use for a specific task?,beginner,0
+How does increasing the number of attention heads in a transformer model impact its computational cost and representational capacity?,intermediate,1
+Why might a model trained on imbalanced data achieve high accuracy but still be unhelpful?,beginner,0
+How do the roles of the training set and the testing set differ in a machine learning project?,beginner,0
+When would an encoder-decoder transformer be preferred over an encoder-only or decoder-only architecture for a sequence-to-sequence task?,intermediate,1
+"When integrating a deep reinforcement learning agent into a real-time, high-dimensional environment, what are the primary scalability concerns regarding the observation space and action space, and how might these be mitigated?",advanced,2
+"What are the practical implications of noisy or erroneous labels in a training dataset, and what strategies can mitigate their negative impact on model performance?",intermediate,1
+"When a pooling layer processes a small section of an image, what kind of information does it typically keep?",beginner,0
+"Despite LSTMs' ability to handle vanishing gradients, under what conditions can exploding gradients still be a significant problem, and how are they typically addressed?",intermediate,1
+"How can an LLM dynamically adapt its instruction following behavior when explicit instructions are modified or contradicted mid-interaction, particularly in long-running conversational contexts, without catastrophic forgetting or inconsistency?",advanced,2
+What happens to the input data as it moves from one layer to the next during forward propagation?,beginner,0
+How can the choice of activation function within individual neurons inadvertently introduce vulnerabilities that compromise a deep neural network's robustness to adversarial attacks or exacerbate vanishing/exploding gradient problems?,advanced,2
+What is the main difference between the agent and the environment in reinforcement learning?,beginner,0
+"What are the theoretical limitations of GRUs in recognizing or generating sequences governed by formal grammars, specifically concerning their capacity to approximate arbitrary finite-state automata or context-free languages?",advanced,2
+What could go wrong if a model's parameters are adjusted too aggressively or too cautiously during training?,beginner,0
+Does fine-tuning mean we completely retrain the entire pre-trained AI model from the very beginning?,beginner,0
+"What are the theoretical implications of choosing Gini impurity over entropy for calculating information gain, particularly regarding their sensitivity to class distribution and propensity for creating binary versus multi-way splits?",advanced,2
+"If a vector database consistently returns irrelevant results despite using a state-of-the-art embedding model, what common issues related to embedding generation or data preprocessing should be investigated?",intermediate,1
+"In what non-standard deep learning paradigms, such as those involving discrete latent variables or non-differentiable operations, do ""vanishing gradient-like"" challenges emerge, and what specialized techniques address them?",advanced,2
+How is an agent's feedback loop similar to a chef tasting their food while cooking?,beginner,0
+Can an underfit model perform well on the data it was trained on?,beginner,0
+"When dealing with a diverse knowledge base containing both short, self-contained articles and lengthy, multi-topic reports, what dynamic chunking strategy might optimize retrieval for both?",intermediate,1
+"Consider a scenario where a source sequence contains highly repetitive or contradictory information. How might the resulting context vector be compromised, and what strategies could enhance its robustness in such cases?",advanced,2
+How do sequence length and vocabulary size influence the computational cost and memory footprint associated with calculating attention scores?,intermediate,1
+"In a federated learning setup, how do privacy-preserving mechanisms, such as differential privacy, influence the effectiveness and utility of shared features for downstream tasks, and what architectural trade-offs emerge?",advanced,2
+"What considerations are important for preparing sequential data, like irregularly sampled time series, for input into a GRU?",intermediate,1
+"When designing a GNN, what are the trade-offs between using a sparse adjacency matrix versus an adjacency list for representing graph edges in memory?",intermediate,1
+"In a highly dynamic target domain where the data distribution shifts continuously and non-stationarily, what are the fundamental limitations of static domain adaptation models, and what emerging adaptive strategies address this challenge?",advanced,2
+What diagnostic steps would you take to determine if a decision tree's poor performance is due to an excessively shallow depth?,intermediate,1
+"If your model's loss is oscillating wildly during training, what might be a likely issue with the parameter update strategy?",intermediate,1
+"How might prioritizing fairness metrics, such as demographic parity, impact a model's overall predictive accuracy in a credit scoring system?",intermediate,1
+How are word embeddings similar to organizing books in a library by subject?,beginner,0
+Why is it important for a graph neural network to consider both nodes and their connecting edges?,beginner,0
+"From a causal inference perspective, how might a model overfit to spurious correlations rather than true causal relationships, and what are the implications for deploying such a model in interventions where causal effects are paramount?",advanced,2
+"During forward propagation, do the connections between neurons change their strength or values?",beginner,0
+"How does ""information gain"" help a decision tree choose the best feature to split on?",beginner,0
+"In a distributed training setup with asynchronous stochastic gradient descent, what challenges arise in ensuring consistent and effective weight updates across multiple workers, and how do techniques like gradient averaging or parameter servers address these?",advanced,2
+"How can an agent effectively quantify and incorporate the uncertainty inherent in its feedback signals, particularly when observations are noisy, incomplete, or originate from unreliable sources, into its learning and decision-making processes?",advanced,2
+"What does ""entropy"" measure when a decision tree is being built?",beginner,0
+"If an LSTM model consistently underperforms on new, unseen sequential data despite achieving high training accuracy, what common overfitting indicators should be examined?",intermediate,1
+Is classifying nodes in a graph similar to classifying individual pictures or text documents?,beginner,0
+"Beyond empirical performance, what are the theoretical underpinnings and potential limitations of applying aggressive data augmentation strategies like Mixup or CutMix, especially concerning their impact on feature representation learning and model calibration?",advanced,2
+"When addressing underfitting by increasing model complexity, how does the computational burden of training and inference scale with respect to dataset size and feature dimensionality?",advanced,2
+"How do severely imbalanced datasets specifically challenge the robustness of binary classifiers, and what are the theoretical implications for model evaluation metrics beyond accuracy?",advanced,2
+"In the context of extremely high-dimensional datasets, how do the algorithmic complexities of optimizing L1-regularized models (e.g., coordinate descent) compare to L2-regularized models (e.g., conjugate gradient) regarding convergence rates and memory requirements for parallel or distributed implementations?",advanced,2
+"What are common reasons few-shot prompting might fail to improve performance, and how can these issues be debugged?",intermediate,1
+How is an underfit model different from an overfit model?,beginner,0
+What are the primary system design considerations and algorithmic complexities involved in implementing effective caching strategies for similarity search results within a distributed vector database to optimize latency and reduce computational load?,advanced,2
+"For models deployed on high-velocity streaming data, what are the computational and memory trade-offs involved in continuously monitoring exact accuracy versus employing approximation techniques or sampling for real-time performance assessment?",advanced,2
+How does giving a language model a couple of examples before asking a question help it generate a more accurate response?,beginner,0
+"Do AI agents remember everything they encounter, or is their memory more selective?",beginner,0
+How are graph embeddings different from simply using a unique ID number for each node in a graph?,beginner,0
+How is chunking text for RAG similar to organizing a library for quick book finding?,beginner,0
+How do different weight and bias initialization strategies influence a neural network's training stability and final performance?,intermediate,1
+"How can one practically determine the optimal number of clusters from a dendrogram generated by hierarchical clustering, considering various approaches?",intermediate,1
+Does a vector database always guarantee it finds the *absolute perfect* match for your search query?,beginner,0
+"What specific numerical stability issues can arise when computing dot-product attention scores, particularly with very large key dimensions, and how does the 'scaled' dot-product attention address these concerns?",advanced,2
+"When integrating a real-time text classification service into a complex microservices architecture, what are the primary challenges in ensuring data consistency and fault tolerance across distributed components?",advanced,2
+What's the most crucial first step for a computer to learn how to classify images correctly?,beginner,0
+How does analyzing false positives versus false negatives in a confusion matrix guide model optimization for different business objectives?,intermediate,1
+"Why might a Graph Neural Network struggle to differentiate between nodes in a large graph, even with many message passing layers?",intermediate,1
+"When designing a custom attention mechanism, what considerations guide the selection of a suitable similarity function for calculating attention scores?",intermediate,1
+"What specific challenges do static word embeddings face in representing polysemous words, and how do contextual embedding models like ELMo or BERT overcome this limitation through their architectural designs and training objectives?",advanced,2
+"When integrating dropout into a large-scale distributed training system, what are the primary challenges related to synchronization, communication overhead, and computational efficiency?",advanced,2
+"How does the quality and domain specificity of the retrieved documents significantly impact the effectiveness of grounding mechanisms in a RAG pipeline, especially for specialized queries?",intermediate,1
+"Beyond activation functions, what architectural modifications can alleviate vanishing gradients, and what are their trade-offs?",intermediate,1
+"How does the standard GAN discriminator's objective function implicitly relate to f-divergences, and what are the theoretical implications of this connection for understanding training stability and mode collapse?",advanced,2
+"If a fine-tuned LLM performs well on the fine-tuning dataset but poorly on a separate, representative validation set, what immediate diagnostic steps should be taken?",intermediate,1
+"How can an LSTM remember important details from the beginning of a long story, even much later on?",beginner,0
+"Beyond simple accuracy, what evaluation metrics are particularly relevant for assessing an LSTM's performance on sequence generation tasks, and why?",intermediate,1
+"Why is understanding how ""error signals"" travel backward through a network important for training?",beginner,0
+"What does it mean for an agentic AI to ""plan"" its actions?",beginner,0
+How is chain of thought prompting similar to a teacher asking you to show your work on a math problem?,beginner,0
+"When designing a neural network, why is it crucial to apply activation functions after the weighted sum in each hidden layer during forward propagation?",intermediate,1
+"What challenge arises if you try to use a simple ""yes/no"" classifier for a task that has three or more distinct outcomes?",beginner,0
+"In what specific scenarios might an LSTM's intrinsic vanishing/exploding gradient mitigation mechanisms prove insufficient, leading to suboptimal performance, particularly when dealing with extremely long-range dependencies or highly noisy sequential data?",advanced,2
+"How does the computational complexity of calculating attention scores scale with increasing sequence length (L) and key dimension (d_k), and what are the primary contributing factors to this scaling?",advanced,2
+How do dataset properties like feature dimensionality or noise levels influence the appropriate maximum depth for a decision tree?,intermediate,1
+"When evaluating an AI model for fairness, why is it crucial to consider multiple fairness metrics rather than relying on a single one?",intermediate,1
+"Beyond overall accuracy, what specific evaluation metrics are crucial for assessing a multiclass classification model's performance when dealing with imbalanced classes, and why?",intermediate,1
+"When you ask a friend to explain their thinking step-by-step, how is that like chain of thought prompting?",beginner,0
+"When the true underlying relationship is sparse but features exhibit strong multicollinearity, how do L1 and L2 regularization differentially impact feature selection stability and the interpretability of the resulting model coefficients?",advanced,2
+"If a dataset used to train an AI for identifying animals mostly contains pictures of cats, what might happen when it sees a dog?",beginner,0
+What is the main goal of using a training set when developing a machine learning model?,beginner,0
+How is organizing a music collection into genres and sub-genres similar to hierarchical clustering?,beginner,0
+"For extremely large graphs with billions of nodes and edges, how do memory and computational constraints fundamentally limit the effectiveness of traditional neighborhood sampling strategies in generating high-quality graph embeddings?",advanced,2
+"How does the implicit assumption of Gaussian noise in L2 regularization, versus a Laplace noise assumption for L1, influence their performance when the true error distribution is significantly heavy-tailed, and what are the implications for robust regression?",advanced,2
+"How do inherent biases present in large text corpora manifest within static and contextual word embeddings, and what are the primary challenges in mitigating these biases effectively without sacrificing semantic utility?",advanced,2
+Does text classification understand the meaning of words like a person does?,beginner,0
+"When designing loss functions for extremely large datasets or models, what computational complexities arise from gradient calculations, and how might these influence the practical feasibility and choice of a specific loss formulation?",advanced,2
+How does query batching impact the latency and throughput of similarity search operations in a vector database?,intermediate,1
+"When evaluating a medical diagnostic model, why might a high accuracy score be misleading if the dataset is imbalanced?",intermediate,1
+"What are the inherent research limitations of purely statistical or subword tokenization methods when dealing with highly ambiguous linguistic phenomena such as compound words or multi-word expressions, and how might probabilistic models address these?",advanced,2
+"When a vector database performs a similarity search, is it looking for exact words or the overall concept behind your query?",beginner,0
+"In what scenarios does an agent's reliance on a learned, potentially inaccurate world model lead to catastrophic planning failures, and what advanced techniques are employed to detect and mitigate such model-reality mismatches during plan execution?",advanced,2
+"When processing a sentence, how does an LSTM decide which words are important enough to remember for later?",beginner,0
+What does it mean for an AI model to be 'explainable'?,beginner,0
+"From a computational complexity perspective, how do different tokenization algorithms like dictionary-based maximum matching versus unigram or BPE-based approaches compare in terms of time and space efficiency during vocabulary construction and inference?",advanced,2
+"How do adversarial perturbations to query vectors or index poisoning attacks impact the integrity and accuracy of approximate nearest neighbor search results, and what architectural or algorithmic countermeasures can mitigate these vulnerabilities?",advanced,2
+"If a large language model has a small context window, what happens when a conversation gets very long?",beginner,0
+Why is scaled dot product attention particularly helpful for a model trying to understand the meaning of a long paragraph?,beginner,0
+"What are the common indicators that a neural network's poor performance might be due to issues with its learned weights, rather than its biases?",intermediate,1
+"Beyond simply handling out-of-vocabulary words, what theoretical advantages do subword embedding techniques like BPE or WordPiece offer over traditional word-level embeddings in terms of semantic representation and morphological generalization?",advanced,2
+Is a deeper decision tree always better for making accurate predictions?,beginner,0
+"An LLM frequently fails to follow negative constraints (e.g., ""do not include X"") in instructions. What debugging strategies could help?",intermediate,1
+"When training models with extremely high-dimensional and sparse feature representations, how does this data characteristic fundamentally alter the convergence dynamics of gradient descent, and what are the associated computational complexity challenges?",advanced,2
+"Beyond empirical performance, what theoretical guarantees and probabilistic interpretations underpin the generalization ability of a model evaluated on a test set, particularly when considering the i.i.d. assumption?",advanced,2
+Are all neurons within a neural network identical in what they do?,beginner,0
+"When implementing a Transformer, how does the choice of positional encoding dimension relate to the model's embedding dimension, and what are the practical implications?",intermediate,1
+"In what specific scenarios might a learned policy degenerate into a deterministic or near-deterministic strategy even when the optimal policy is inherently stochastic, and what are the implications for exploration and optimality?",advanced,2
+"How does the choice of a non-Euclidean distance metric, such as Mahalanobis or cosine similarity, fundamentally alter the interpretation of a hierarchical dendrogram and impact the validity of clusters derived from it, especially in anisotropic data distributions?",advanced,2
+"How do current adversarial training strategies for GANs contend with adaptive attackers who are aware of the defense mechanism, and what are the inherent limitations in achieving provable robustness against such adversaries?",advanced,2
+"What architectural patterns and data governance strategies are crucial for efficiently managing, versioning, and deploying a rapidly evolving set of prompt constraints across a large-scale, multi-tenant LLM application environment?",advanced,2
+What does the 'K' specifically represent when we talk about K-means clustering?,beginner,0
+"Given the computational expense of generating counterfactual explanations for high-dimensional data, how can one efficiently sample the latent space to identify a minimal set of counterfactuals that robustly expose algorithmic bias without incurring prohibitive costs?",advanced,2
+How does the discriminator's input and objective adapt when transitioning from an unconditional GAN to a conditional GAN?,intermediate,1
+"When evaluating the effectiveness of a nearest neighbor retrieval system, what metrics are most crucial, and why is recall often prioritized over precision?",intermediate,1
+Does adversarial training mean the generator and discriminator are trying to help each other?,beginner,0
+"When preparing data for clustering, how should the choice of distance metric influence decisions about feature scaling and transformation, especially for skewed distributions?",intermediate,1
+What would a large language model be unable to do if it skipped the pretraining process entirely?,beginner,0
+"In a multi-task learning scenario with a composite loss function, how does the chain rule apply to combine gradients from different loss components during backpropagation?",intermediate,1
+"How does the inherent nature of a label, such as being continuous or categorical, dictate the appropriate choice of machine learning algorithms and evaluation metrics?",intermediate,1
+"When a neural network's weights show minimal change despite high training loss, what weight update-related issues should be investigated?",intermediate,1
+"Beyond a simple weighted average, how can the attention weights in a self-attention layer be interpreted from a probabilistic perspective, and what insights does this offer into the model's information processing?",advanced,2
+"How does the choice of evaluation metric for imbalanced datasets, such as PR AUC versus ROC AUC, impact model robustness when dealing with highly skewed and noisy minority classes, especially in scenarios where false positives are extremely costly?",advanced,2
+"How can differing feature scales negatively impact clustering results when using Euclidean distance, and what's a common preprocessing step to mitigate this?",intermediate,1
+"Beyond adding features, how can adjusting hyperparameter ranges during grid search or random search help diagnose and alleviate underfitting?",intermediate,1
+Is responsible AI just about making sure the AI works perfectly without any mistakes?,beginner,0
+"How does the choice of aggregation function (e.g., mean, sum, max) in a GNN layer impact node classification performance?",intermediate,1
+"How does the choice between Euclidean and Manhattan distance metrics influence the resulting clusters in k-means, and when is each more appropriate?",intermediate,1
+"When you type a command into an LLM, what is happening behind the scenes for it to understand your request?",beginner,0
+"When would an explicit human-in-the-loop feedback mechanism be preferred over an automated self-correction loop for an agent, and what are the trade-offs?",intermediate,1
+How are weights and biases like adjusting the ingredients and oven temperature for baking a cake?,beginner,0
+"How can the saturation property of activation functions like sigmoid or tanh hinder the learning process in deep networks, and what strategies mitigate this issue?",intermediate,1
+"How do parameter-efficient fine-tuning (PEFT) methods like LoRA mitigate the scalability challenges associated with fine-tuning large foundation models for numerous downstream tasks, particularly concerning memory footprint and training throughput?",advanced,2
+What critical considerations should guide the preparation of a dataset for fine-tuning a large language model for a specific task?,intermediate,1
+How does unsupervised learning differ from supervised learning in terms of needing labeled data?,beginner,0
+Why is the chain rule called 'chain' rule in the context of neural network learning?,beginner,0
+"Imagine a social network. How is ""message passing"" in a GNN similar to how information spreads among friends?",beginner,0
+What happens if the text I give an LLM is longer than its context window can hold?,beginner,0
+"When designing a discriminator for a multi-modal GAN where different modalities have vastly different feature spaces, what architectural and loss function design considerations are critical to ensure balanced learning and prevent one modality from dominating the adversarial signal?",advanced,2
+"Beyond computational cost, what are the architectural and maintenance trade-offs when deciding between extensive fine-tuning and sophisticated prompt engineering for integrating an LLM into a dynamic enterprise system?",advanced,2
+How does the learning rate influence how quickly a model adjusts its parameters during training?,beginner,0
+How is a feature map like a specialized magnifying glass in image processing?,beginner,0
+How is fine-tuning an AI model like a skilled baker learning to make a new cake for a specific customer?,beginner,0
+"When implementing agglomerative hierarchical clustering, what practical considerations guide the selection of an appropriate distance metric for different data types?",intermediate,1
+"How do architectural choices regarding network depth versus width influence the computational complexity and memory requirements of a neural network during both training and inference, particularly in resource-constrained environments?",advanced,2
+"Beyond statistical parity, how might an AI system's fairness metrics exhibit fragility or lack robustness when faced with adversarial attacks or subtle shifts in data distribution, even if initially deemed fair?",advanced,2
+"Beyond a simple similarity measure, how can the interaction between query and key vectors in the attention mechanism be theoretically interpreted as a form of probabilistic alignment or information-theoretic dependency, influencing the weighted aggregation of values?",advanced,2
+"From a theoretical perspective, how does the inherent probabilistic nature of real-world data distributions complicate the precise quantification and attribution of dataset bias, especially when confounding variables are prevalent?",advanced,2
+How does an LLM's ability to follow instructions allow us to interact with it using natural language?,beginner,0
+"How does the discriminator's training objective in a GAN differ from a standard binary classifier, and why is this crucial for training stability?",intermediate,1
+"Beyond simple prompt injection, what advanced adversarial techniques exploit an LLM's instruction following mechanisms to induce specific, unintended outputs or bypass safety alignment, and how are these vulnerabilities addressed?",advanced,2
+"In a large-scale recommendation system with millions of items and users, what are the primary scalability challenges when implementing contextual bandit algorithms for dynamic exploration-exploitation?",advanced,2
+"If a Transformer model exhibits poor performance due to attention consistently focusing on irrelevant parts of the input, how could you analyze the Query, Key, and Value interactions to diagnose the issue?",intermediate,1
+How does the choice between adversarial-based and reconstruction-based domain adaptation methods impact the model training workflow?,intermediate,1
+What are the trade-offs between automated metrics and human evaluation for assessing an LLM's instruction following capabilities?,intermediate,1
+"From a probabilistic perspective, how can the hidden state of an RNN be rigorously interpreted as a conditional sufficient statistic for future observations, and what are the implications for its information theoretic properties?",advanced,2
+"When training a recurrent neural network, how might exploding gradients manifest, and what immediate steps can be taken to mitigate them?",intermediate,1
+How does the choice between exact and approximate nearest neighbor (ANN) search impact retrieval performance and accuracy in a vector database?,intermediate,1
+"Beyond simple confidence scores, how can formal probabilistic graphical models or causal inference frameworks be leveraged to provide more nuanced and explainable assessments of grounding strength and potential biases in RAG outputs?",advanced,2
+How does multiclass classification differ from binary classification?,beginner,0
+Why is it unhelpful if a GAN's generator only learns to produce a very narrow range of outputs?,beginner,0
+What happens if a decision tree uses a bad splitting criterion?,beginner,0
+"When we say words are ""embedded,"" what kind of numerical representation are we talking about?",beginner,0
+How does freezing early layers help prevent overfitting when training on a small dataset?,beginner,0
+"For online learning systems deployed in dynamic environments, what theoretical guarantees are compromised when features or labels exhibit non-stationary distributions, and how does this impact model adaptability at scale?",advanced,2
+"Does the discriminator try to create its own images, or just evaluate them?",beginner,0
+"How do different grounding strategies, such as direct citation versus implicit factual consistency checks, influence the reliability of a RAG system's generated responses?",intermediate,1
+"When deploying a model trained on an imbalanced dataset, how does the potential for concept drift, particularly in the minority class distribution, complicate the design of robust monitoring and retraining strategies in a production environment?",advanced,2
+"What might cause a self-attention layer to consistently assign uniform attention weights across all tokens, and how could this be diagnosed?",intermediate,1
+How can examining feature importance scores from SHAP values help debug a model exhibiting disparate impact across protected groups?,intermediate,1
+Consider a reinforcement learning agent trained for resource allocation in a complex social system; what are the potential edge cases where a seemingly fair reward function could inadvertently amplify existing societal biases or lead to discriminatory outcomes?,advanced,2
+"For a high-throughput, real-time machine learning system, what inherent limitations make accuracy an insufficient metric for continuous operational monitoring and performance degradation detection?",advanced,2
+What is the main benefit of using adversarial training in a GAN?,beginner,0
+"Why is feature scaling often crucial for efficient and stable convergence of gradient descent, especially with diverse feature ranges?",intermediate,1
+Can nodes and edges represent different types of things within the same graph neural network model?,beginner,0
