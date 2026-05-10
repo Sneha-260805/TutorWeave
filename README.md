@@ -176,7 +176,7 @@ Shared singleton loader for `all-MiniLM-L6-v2`. Loaded once at import time; `sem
 - Loads fine-tuned DistilBERT from `models/distilbert_eduagent_v2/`
 - Falls back to keyword heuristic if model directory is absent (62.1% accuracy vs. 97.92% for DistilBERT)
 - Beginner-intent calibration applies only to questions of ≤ 8 words
-- **HuggingFace Hub**: Model also published at [`Sneha-260805/distilbert-eduagent-v2`](https://huggingface.co/Sneha-260805/distilbert-eduagent-v2) for direct loading via `transformers`
+- **HuggingFace Hub**: Model also published at [`SSneha2005/Eduagent_distilbert`](https://huggingface.co/SSneha2005/Eduagent_distilbert) for direct loading via `transformers`
 
 ### `ml/topic_detector.py`
 
