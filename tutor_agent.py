@@ -1,8 +1,6 @@
 from groq import Groq
-from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
-import torch
-import torch.nn.functional as F
 from example_retriever import retrieve_examples, detect_best_topic
+from ml.classifier import predict_level
 import os
 
 # -----------------------------
@@ -13,31 +11,6 @@ if not GROQ_API_KEY:
     raise ValueError("Set GROQ_API_KEY in your environment before running this script.")
 
 client = Groq(api_key=GROQ_API_KEY)
-
-tokenizer = DistilBertTokenizer.from_pretrained("./difficulty_classifier")
-model = DistilBertForSequenceClassification.from_pretrained("./difficulty_classifier")
-model.eval()
-
-labels = ["beginner", "intermediate", "advanced"]
-
-# -----------------------------
-# CLASSIFIER
-# -----------------------------
-def predict_level(text):
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=128)
-
-    with torch.no_grad():
-        logits = model(**inputs).logits
-
-    probs = F.softmax(logits, dim=1)
-    pred_idx = torch.argmax(probs, dim=1).item()
-    confidence = probs.tolist()[0]
-    predicted_label = labels[pred_idx]
-
-    if max(confidence) < 0.6:
-        predicted_label = "intermediate"
-
-    return predicted_label, confidence
 
 # -----------------------------
 # FORMAT EXAMPLES

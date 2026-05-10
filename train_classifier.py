@@ -13,6 +13,8 @@ from transformers import (
 import numpy as np
 from sklearn.metrics import accuracy_score, classification_report
 
+MODEL_OUTPUT_DIR = "./models/distilbert_eduagent_v2"
+
 # -------------------------
 # Load cleaned dataset
 # -------------------------
@@ -114,7 +116,7 @@ print(classification_report(predictions.label_ids, preds))
 # -------------------------
 # Save model
 # -------------------------
-model.save_pretrained("./difficulty_classifier")
-tokenizer.save_pretrained("./difficulty_classifier")
+model.save_pretrained(MODEL_OUTPUT_DIR)
+tokenizer.save_pretrained(MODEL_OUTPUT_DIR)
 
-print("\nModel saved to ./difficulty_classifier")
+print(f"\nModel saved to {MODEL_OUTPUT_DIR}")
