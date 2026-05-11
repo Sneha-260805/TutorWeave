@@ -14,3 +14,7 @@ wordcloud
 python-dotenv
 passlib
 pydantic
+openai-whisper
+librosa
+soundfile
+pyttsx3
