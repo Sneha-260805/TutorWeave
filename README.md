@@ -35,6 +35,8 @@ A full write-up of the system design, model details, and experimental results is
 - `used_explanations` tracking per topic — prevents the LLM from repeating the same explanation style
 - **Diminishing-returns mastery model**: `m += 0.20 × (1 − m)` on good, `−0.06` on partial, `−0.18` on poor; initialized at 0.5, clamped to [0, 1]
 - Groq-powered Tutor Agent (`llama-3.3-70b-versatile`, temperature 0.25) for mode-specific explanations
+- Voice interaction support via `voice/` module: speech-to-text, text-to-speech, and audio-enabled learner conversation
+- Model setup helper script `setup_model.py` plus bundled DistilBERT model assets under `models/distilbert_eduagent_v2`
 - Pydantic-validated `EvaluationResult` — `understanding_level: Literal["good","partial","poor"]`
 - Shared LLM client with timeout, retry (0.75 s / 1.5 s backoff, 3 attempts), and graceful local fallback
 - Dark theme Gradio UI with tabbed learner dashboard and Matplotlib progress charts
@@ -85,6 +87,8 @@ EduAgent/
     settings.py
   models/
     distilbert_eduagent_v2/         ← fine-tuned DistilBERT classifier
+  setup_model.py                    ← helper script to bootstrap model assets and tokenizer
+  voice/                            ← speech-to-text / text-to-speech voice interface support
   datasets/
     eduagent_dataset.csv
     eduagent_training_ready.csv
