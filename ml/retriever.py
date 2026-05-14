@@ -28,11 +28,42 @@ if _semantic_available:
 else:
     logger.warning("sentence-transformers not available. Retrieval falling back to TF-IDF.")
 
+_KEYWORD_STOPS = frozenset({
+    "what", "is", "are", "how", "the", "a", "an", "in", "of", "to",
+    "and", "for", "with", "does", "do", "can", "i", "me", "my", "it",
+    "this", "that", "be", "at", "by", "on", "or", "as", "its", "was",
+    "why", "when", "which", "where", "who",
+})
+
+
+def _ngrams(tokens: list[str], n: int) -> set[str]:
+    return {" ".join(tokens[i:i + n]) for i in range(len(tokens) - n + 1)}
+
+
+def _keyword_overlap(query: str, candidates: list[str]) -> np.ndarray:
+    """
+    Unigram + bigram Jaccard similarity on content words (stop-words removed).
+    Including bigrams lets the exact source question rank above near-duplicates
+    that share topic vocabulary but not the same phrase structure.
+    """
+    q_tokens = [w for w in clean_text(query).split() if w not in _KEYWORD_STOPS]
+    if not q_tokens:
+        return np.zeros(len(candidates))
+
+    q_ngrams = set(q_tokens) | _ngrams(q_tokens, 2)
+
+    scores = []
+    for c in candidates:
+        c_tokens = [w for w in clean_text(c).split() if w not in _KEYWORD_STOPS]
+        c_ngrams = set(c_tokens) | _ngrams(c_tokens, 2)
+        union = q_ngrams | c_ngrams
+        scores.append(len(q_ngrams & c_ngrams) / len(union) if union else 0.0)
+    return np.array(scores, dtype=float)
+
 # ---------------------------------------------------------------------------
 # Dataset — loaded once at import, shared with tutor_agent via `df`
 # ---------------------------------------------------------------------------
 df = pd.read_csv(DATASET_FILE)
-
 # ---------------------------------------------------------------------------
 # Index cache  {(n_rows, level, topic): (filtered_df, vectors)}
 # ---------------------------------------------------------------------------
@@ -44,12 +75,16 @@ _INDEX_CACHE: dict = {}
 # ---------------------------------------------------------------------------
 
 def filter_by_level(df_in: pd.DataFrame, level: str) -> pd.DataFrame:
+    # Thresholds calibrated to v2 dataset percentiles (p5–p97 per level).
+    # Beginner: min=57, p95=100, max=114  → keep < 120
+    # Intermediate: min=78, p95=144, max=170 → keep 40–165
+    # Advanced: min=102, all answers long → keep > 80 (unchanged)
     df_in = df_in.copy()
     df_in["answer_length"] = df_in["answer"].apply(lambda x: len(str(x).split()))
     if level == "beginner":
-        return df_in[df_in["answer_length"] < 80]
+        return df_in[df_in["answer_length"] < 120]
     if level == "intermediate":
-        return df_in[(df_in["answer_length"] >= 40) & (df_in["answer_length"] <= 110)]
+        return df_in[(df_in["answer_length"] >= 40) & (df_in["answer_length"] <= 165)]
     if level == "advanced":
         return df_in[df_in["answer_length"] > 80]
     return df_in
@@ -76,18 +111,38 @@ def _cache_key(level: str, topic: str | None) -> tuple:
 
 
 def _filter_slice(level: str, topic: str | None) -> pd.DataFrame:
-    """Return the dataset slice for this level/topic pair."""
     filtered = df[df["level"].astype(str).str.lower() == level].copy()
     if topic:
-        by_topic = filtered[filtered["topic"].astype(str).str.lower() == topic.lower()]
-        if len(by_topic) > 0:
-            filtered = by_topic
+        # Try subtopic match first (more precise), then fall back to topic
+        if "subtopic" in df.columns:
+            by_subtopic = filtered[
+                filtered["subtopic"].astype(str).str.lower().str.contains(
+                    topic.lower(), na=False
+                )
+            ]
+            if len(by_subtopic) >= 3:   # only use subtopic if enough results
+                filtered = by_subtopic
+            else:
+                by_topic = filtered[
+                    filtered["topic"].astype(str).str.lower() == topic.lower()
+                ]
+                if len(by_topic) > 0:
+                    filtered = by_topic
+        else:
+            by_topic = filtered[
+                filtered["topic"].astype(str).str.lower() == topic.lower()
+            ]
+            if len(by_topic) > 0:
+                filtered = by_topic
+
     filtered = filter_by_level(filtered, level)
     if len(filtered) == 0:
         # Relax length filter and retry
         filtered = df[df["level"].astype(str).str.lower() == level].copy()
         if topic:
-            by_topic = filtered[filtered["topic"].astype(str).str.lower() == topic.lower()]
+            by_topic = filtered[
+                filtered["topic"].astype(str).str.lower() == topic.lower()
+            ]
             if len(by_topic) > 0:
                 filtered = by_topic
     return filtered.reset_index(drop=True)
@@ -119,9 +174,12 @@ def _semantic_retrieve(user_question: str, level: str, topic: str | None, top_n:
     user_vec = _embed_model.encode([user_question], convert_to_numpy=True)
     sims = cosine_similarity(user_vec, vectors).flatten()
 
+    # Hybrid score: 80% semantic cosine + 20% keyword Jaccard – penalty
+    kw_scores = _keyword_overlap(user_question, filtered["question"].tolist())
     scored = filtered.copy()
     scored["similarity"] = sims
-    scored["final_score"] = scored["similarity"] - scored["penalty"]
+    scored["keyword"] = kw_scores
+    scored["final_score"] = 0.75 * scored["similarity"] + 0.25 * scored["keyword"] - scored["penalty"]
     scored = scored.sort_values("final_score", ascending=False)
     return scored.head(top_n)[["question", "answer", "level", "topic"]]
 

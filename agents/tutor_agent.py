@@ -12,11 +12,12 @@ def format_examples(examples_df):
 
     parts = []
     for i, row in enumerate(examples_df.itertuples(index=False), 1):
+        # Truncate answers to keep the prompt tight and avoid timeout
+        answer_short = str(row.answer)[:300].rstrip()
         parts.append(
-            f"Example {i}:\n"
-            f"Question: {row.question}\n"
-            f"Answer: {row.answer}\n"
-            f"Topic: {row.topic}"
+            f"[{i}] Q: {row.question}\n"
+            f"    A: {answer_short}\n"
+            f"    Topic: {row.topic}"
         )
     return "\n\n".join(parts)
 
@@ -101,20 +102,22 @@ Mode-specific instructions:
 def build_local_fallback_answer(user_question: str, level: str, topic: str, examples_df) -> str:
     """
     Return a quick non-LLM answer when the external tutor model is unavailable.
+    Draws only from retrieved examples for the actual topic — never injects canned content.
     """
-    example_hint = ""
     if examples_df is not None and len(examples_df) > 0:
         first = examples_df.iloc[0]
-        example_hint = f"\n\nA related dataset example says: {first.get('answer', '')}"
+        example_answer = str(first.get("answer", "")).strip()
+        if example_answer:
+            return (
+                f"The live tutor model is temporarily unavailable. "
+                f"Here is a relevant explanation about **{topic}** from the knowledge base:\n\n"
+                f"{example_answer}"
+            )
 
     return (
-        "The live tutor model is taking too long, so here is a quick local explanation.\n\n"
-        f"Your question is about **{topic}**, and it was detected as **{level}** level. "
-        f"For your question, \"{user_question}\", focus on the core relationship between the main concept "
-        "and the outcome you are asking about. If the question is about gradient descent, remember that "
-        "learning rate controls step size: a very small rate learns slowly, a reasonable rate converges "
-        "steadily, and a very large rate can overshoot or become unstable."
-        f"{example_hint}"
+        f"The live tutor model is temporarily unavailable. "
+        f"Your question is about **{topic}** at **{level}** level. "
+        f"Please try again in a moment for a full adaptive explanation."
     )
 
 
@@ -147,50 +150,50 @@ def generate_tutor_response(user_question: str, profile: dict):
         else ""
     )
 
-    prompt = f"""
-You are EduAgent, an adaptive AI tutor.
+    eval_hint = evaluation_strategy_hint or ""
+    # Only inject memory hint when it carries real learner history (not the blank-profile noise)
+    memory_is_informative = memory_hint and "no strong prior history" not in memory_hint.lower()
+    memory_section = f"\nLearner context: {memory_hint}" if memory_is_informative else ""
+    eval_section = f"\nStrategy hint: {eval_hint}" if eval_hint else ""
 
-Student question:
-{user_question}
+    system_message = (
+        f"You are EduAgent, an adaptive AI tutor specializing in {topic}. "
+        f"You MUST stay focused on {topic} throughout your answer. "
+        f"Do NOT drift into unrelated ML concepts such as gradient descent, learning rate, "
+        f"or optimization unless {topic} itself explicitly requires them. "
+        f"Pitch your explanation at {level} level."
+    )
 
-Detected student level:
-{level}
+    user_message = f"""QUESTION: {user_question}
+TOPIC: {topic}{memory_section}{eval_section}
 
-Detected topic:
-{topic}
-
-Learner memory hint:
-{memory_hint}
-
-Recent evaluator strategy hint:
-{evaluation_strategy_hint if evaluation_strategy_hint else "No recent evaluation strategy available for this topic."}
-
-Retrieved dataset examples (semantically similar to the student's question):
+RETRIEVED KNOWLEDGE BASE EXAMPLES — these are your PRIMARY source:
 {examples_text}{weak_rag_section}
 
-General instructions:
-- Answer according to the detected level.
-- For beginner: use simple words, intuition, and easy examples.
-- For intermediate: explain clearly with moderate detail and 1-2 key technical terms.
-- For advanced: give a deeper, more technical explanation.
-- Treat retrieved examples as supporting context, not as guaranteed ground truth.
-- Use relevant examples to ground the explanation style and topic coverage.
-- Do not copy the retrieved examples directly.
-- Use learner memory to avoid repeating the same explanation style.
-- If weak area examples are provided, use them to specifically address those gaps.
-- If recent evaluator strategy exists, adapt the answer accordingly.
-- Keep the answer educational, structured, and concise.
+GROUNDING RULES (follow strictly):
+1. Build your answer directly upon the facts, concepts, and explanations in the retrieved examples above.
+2. Every key claim in your answer should trace back to the retrieved examples.
+3. You may expand or re-explain retrieved content — but do NOT ignore it.
+4. Do NOT copy retrieved text verbatim — synthesize and adapt in your own words.
+5. Do NOT introduce facts or concepts that contradict the retrieved examples.
+
+LEVEL GUIDE:
+- beginner: simple words, analogies, no jargon
+- intermediate: moderate detail, 1-2 key terms explained
+- advanced: technical depth, assume background knowledge
 
 {mode_instruction}
-
-Now answer the student's question.
-"""
+Answer clearly and concisely (3–6 sentences)."""
 
     fallback_answer = build_local_fallback_answer(user_question, level, topic, examples)
 
     answer = complete_chat(
-        [{"role": "user", "content": prompt}],
+        [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_message},
+        ],
         fallback=fallback_answer,
         temperature=0.25,
+        max_tokens=512,
     )
     return level, confidence, topic, examples, weak_examples, answer, teaching_mode

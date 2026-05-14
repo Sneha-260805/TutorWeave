@@ -1,0 +1,77 @@
+[
+  {
+    "weak_concepts": [
+      "chain rule",
+      "gradient flow"
+    ],
+    "topic": "backpropagation",
+    "level": "intermediate",
+    "retrieved_count": 2,
+    "keyword_hit_rate": 1.0,
+    "avg_semantic_sim": 0.5302297472953796,
+    "retrieved_questions": [
+      "How does the chain rule enable efficient gradient computation across multiple layers in a neural network during backpropagation?",
+      "How can an incorrect implementation of the chain rule during backpropagation lead to unstable training or incorrect model updates?"
+    ]
+  },
+  {
+    "weak_concepts": [
+      "vanishing gradient",
+      "long-term dependencies"
+    ],
+    "topic": "recurrent neural networks",
+    "level": "advanced",
+    "retrieved_count": 2,
+    "keyword_hit_rate": 1.0,
+    "avg_semantic_sim": 0.3709056079387665,
+    "retrieved_questions": [
+      "How do vanishing/exploding gradients specifically impact the long-term sequence memory of LSTMs and GRUs in very deep recurrent architectures, and what are the theoretical limitations of their gating mechanisms in mitigating these issues for extremely long sequences?",
+      "In real-world applications with noisy or partially observed sequences, what architectural modifications or training strategies are crucial for an RNN to maintain robust long-term sequence memory?"
+    ]
+  },
+  {
+    "weak_concepts": [
+      "overfitting",
+      "bias variance"
+    ],
+    "topic": "overfitting and regularization",
+    "level": "beginner",
+    "retrieved_count": 2,
+    "keyword_hit_rate": 1.0,
+    "avg_semantic_sim": 0.5037201046943665,
+    "retrieved_questions": [
+      "What does it mean when a machine learning model has 'overfit' its training data?",
+      "What are the main signs that a machine learning model might be overfitting its data?"
+    ]
+  },
+  {
+    "weak_concepts": [
+      "attention scores",
+      "query key value"
+    ],
+    "topic": "attention mechanism",
+    "level": "advanced",
+    "retrieved_count": 2,
+    "keyword_hit_rate": 1.0,
+    "avg_semantic_sim": 0.5858479738235474,
+    "retrieved_questions": [
+      "When queries are orthogonal to all keys, or all keys are identical, how do attention scores behave, and what are the implications for the model's ability to focus or learn meaningful relationships?",
+      "How does the computational complexity of calculating attention scores scale with increasing sequence length (L) and key dimension (d_k), and what are the primary contributing factors to this scaling?"
+    ]
+  },
+  {
+    "weak_concepts": [
+      "pooling",
+      "feature maps"
+    ],
+    "topic": "convolutional neural networks",
+    "level": "beginner",
+    "retrieved_count": 2,
+    "keyword_hit_rate": 1.0,
+    "avg_semantic_sim": 0.4746510982513428,
+    "retrieved_questions": [
+      "How does a pooling layer help reduce the computational load on a convolutional neural network?",
+      "What is the main purpose of a pooling layer in a convolutional neural network?"
+    ]
+  }
+]
