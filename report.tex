@@ -1,469 +1,684 @@
-\documentclass[10pt,a4paper,twocolumn]{article}
+\documentclass[11pt,a4paper]{article}
 
-% ---------------------------------------------------------
-% PACKAGES
-% ---------------------------------------------------------
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
+% ---------- Packages ----------
+\usepackage[a4paper,margin=0.78in]{geometry}
 \usepackage{setspace}
+\usepackage{microtype}
 \usepackage{graphicx}
-\usepackage{amsmath}
-\usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage{array}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb}
 \usepackage{xcolor}
-\usepackage{colortbl}
 \usepackage{hyperref}
 \usepackage{enumitem}
-\usepackage{listings}
-\usepackage{titlesec}
 \usepackage{caption}
+\usepackage{subcaption}
 \usepackage{float}
+\usepackage{listings}
+\usepackage{tcolorbox}
 \usepackage{tikz}
-\usepackage{multicol}
-\usepackage{multirow}
-\usepackage{abstract}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, calc}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
 
-\setstretch{1.05}
+\hypersetup{colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!65!black,citecolor=blue!55!black}
+\setstretch{1.08}
+\setlist[itemize]{leftmargin=1.1em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.4em,itemsep=2pt,topsep=3pt}
+\setlength{\tabcolsep}{4pt}
+\emergencystretch=3em
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 
-\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue}
+% ---------- Colors ----------
+\definecolor{eduNavy}{HTML}{0B1120}
+\definecolor{eduBlue}{HTML}{2563EB}
+\definecolor{eduTeal}{HTML}{14B8A6}
+\definecolor{eduOrange}{HTML}{F59E0B}
+\definecolor{eduGreen}{HTML}{16A34A}
+\definecolor{eduGray}{HTML}{F3F4F6}
+\definecolor{codeBg}{HTML}{F8FAFC}
+\definecolor{codeFrame}{HTML}{CBD5E1}
 
-\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.8em}{}
-\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.6em}{}
-\titleformat{\subsubsection}{\normalfont\small\bfseries}{\thesubsubsection}{0.5em}{}
-\titlespacing{\section}{0pt}{6pt}{3pt}
-\titlespacing{\subsection}{0pt}{4pt}{2pt}
-\titlespacing{\subsubsection}{0pt}{3pt}{1pt}
+\newtcolorbox{findingbox}{colback=blue!3!white,colframe=eduBlue!60!black,arc=2mm,boxrule=0.6pt,left=6pt,right=6pt,top=6pt,bottom=6pt}
+\newtcolorbox{contribbox}{colback=teal!3!white,colframe=eduTeal!70!black,arc=2mm,boxrule=0.6pt,left=6pt,right=6pt,top=6pt,bottom=6pt}
+\newtcolorbox{cautionbox}{colback=orange!5!white,colframe=eduOrange!75!black,arc=2mm,boxrule=0.6pt,left=6pt,right=6pt,top=6pt,bottom=6pt}
 
 \lstdefinestyle{promptstyle}{
-    backgroundcolor=\color{gray!8},
-    basicstyle=\ttfamily\scriptsize,
-    frame=single,
-    breaklines=true,
-    columns=fullflexible,
-    keepspaces=true,
-    xleftmargin=3pt, xrightmargin=3pt,
-    aboveskip=3pt, belowskip=3pt
+  backgroundcolor=\color{codeBg},
+  basicstyle=\ttfamily\scriptsize,
+  frame=single,
+  rulecolor=\color{codeFrame},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  aboveskip=6pt,
+  belowskip=6pt
 }
 \lstset{style=promptstyle}
 
-\definecolor{cmhigh}{RGB}{198,232,198}
-\definecolor{cmlow}{RGB}{255,220,220}
-\definecolor{cmzero}{RGB}{245,245,245}
-\definecolor{modecolor}{RGB}{230,240,255}
-
+% ---------- TikZ styles ----------
 \tikzset{
-  block/.style={rectangle, rounded corners=3pt, draw=black!60, fill=blue!8,
-                text width=3.8cm, align=center, minimum height=0.7cm,
-                inner sep=4pt, font=\scriptsize},
-  sblock/.style={rectangle, rounded corners=3pt, draw=black!60, fill=green!12,
-                text width=3.8cm, align=center, minimum height=0.7cm,
-                inner sep=4pt, font=\scriptsize\bfseries},
-  dblock/.style={rectangle, rounded corners=3pt, draw=black!60, fill=orange!12,
-                text width=3.8cm, align=center, minimum height=0.7cm,
-                inner sep=4pt, font=\scriptsize},
-  tinyblock/.style={rectangle, rounded corners=2pt, draw=black!50, fill=blue!7,
-                text width=3.0cm, align=center, minimum height=0.55cm,
-                inner sep=3pt, font=\tiny},
-  tinydecision/.style={diamond, draw=black!50, fill=orange!15,
-                text width=1.5cm, align=center, font=\tiny, aspect=2.2,
-                inner sep=1pt},
-  decision/.style={diamond, draw=black!60, fill=orange!15,
-                   text width=1.7cm, align=center, font=\scriptsize,
-                   aspect=2.2, inner sep=1pt},
-  arrow/.style={-{Stealth[length=2mm]}, thick},
-  sarrow/.style={-{Stealth[length=1.5mm]}, semithick}
+  proc/.style={rectangle, rounded corners=2pt, draw=eduBlue!65!black, fill=blue!5, align=center, minimum width=3.3cm, minimum height=0.78cm, font=\scriptsize},
+  agent/.style={rectangle, rounded corners=2pt, draw=eduOrange!75!black, fill=orange!8, align=center, minimum width=3.3cm, minimum height=0.78cm, font=\scriptsize},
+  data/.style={rectangle, rounded corners=2pt, draw=eduGreen!65!black, fill=green!6, align=center, minimum width=3.3cm, minimum height=0.78cm, font=\scriptsize},
+  store/.style={cylinder, shape border rotate=90, aspect=0.24, draw=eduTeal!75!black, fill=teal!5, align=center, minimum width=2.8cm, minimum height=0.9cm, font=\scriptsize},
+  decision/.style={diamond, aspect=1.9, draw=eduNavy!75, fill=eduGray, align=center, inner sep=1.2pt, font=\scriptsize},
+  arrow/.style={-Latex, thick, draw=eduNavy!75}
 }
 
-% ---------------------------------------------------------
-\title{\vspace{-1.2cm}%
-    \textbf{\large EduAgent: A Personalized Agentic AI Tutoring System}\\[0.2em]
-    \normalsize with Semantic RAG, Adaptive Teaching Modes, Learner Memory,\\
-    and a Fine-Tuned DistilBERT Difficulty Classifier (97.92\% Accuracy)
-}
-\author{
-    \small Department of Artificial Intelligence \quad Third Year B.Tech --- GenAI Project
-}
-\date{\vspace{-0.5em}\small\today}
+\title{\vspace{-1.5cm}\textbf{EduAgent: A Personalized Agentic AI Tutor with Fine-Tuned Difficulty Classification, Semantic Two-Pass RAG, Learner Memory, Voice Interaction, and Adaptive Teaching Modes}\\[0.45em]
+\large Research Paper-Style Technical Report}
+\author{Department of Artificial Intelligence \\ Third Year B.Tech GenAI Project}
+\date{May 2026}
 
 \begin{document}
 \maketitle
-\thispagestyle{plain}
 
-% ==========================================================
 \begin{abstract}
-\small
-EduAgent is a personalized Agentic AI tutoring system for AI/ML education. It classifies learner questions by difficulty using a fine-tuned \texttt{distilbert-base-uncased} model trained on a purpose-built 2,400-sample synthetic dataset, achieving \textbf{97.92\% test accuracy} — a \textbf{+35.8 pp improvement} over a keyword-heuristic baseline. Topic detection uses \texttt{all-MiniLM-L6-v2} dense embeddings via a two-tier alias+cosine pipeline. A \textbf{two-pass personalized RAG} system retrieves level-appropriate examples (Pass~1) and weak-area targeted examples (Pass~2) from the dataset. Four adaptive teaching modes (remedial, clarification, advance, default), a diminishing-returns mastery model, and used-explanation deduplication ensure responses change as the learner progresses. All prompts sent to the LLM are fully documented in this paper.
+EduAgent is a personalized AI/ML tutoring system that moves beyond one-shot chatbot behavior by combining a fine-tuned DistilBERT difficulty classifier, semantic topic detection, two-pass personalized retrieval, persistent learner memory, LLM-based tutoring and evaluation agents, and a Gradio interface with voice input/output. The updated repository uses a 2,400-row Gemini-generated instructional dataset with topic, subtopic, difficulty, angle, reasoning, and confusion metadata. A DistilBERT classifier trained on this dataset reaches 97.92\% test accuracy and 97.91\% macro-F1 on a balanced 240-example test split. The current saved RAG checkpoint evaluates 18 questions and reports Hit Rate@3 = 83.3\%, MRR = 0.8333, Topic Precision = 83.3\%, Level Precision = 100\%, average semantic similarity = 0.7153, Faithfulness = 5.00/5, Answer Relevancy = 5.00/5, Context Utilization = 4.44/5, and Level Fit = 4.94/5. A separate weak-area retrieval evaluation reports 100\% keyword relevance over five simulated learner weakness profiles. This report documents the architecture, dataset construction, prompts, classifier results, RAG evaluation, memory update equations, testing evidence, limitations, and future research directions.
 \end{abstract}
 
-% ==========================================================
+
+\tableofcontents
+\newpage
+
+% =========================================================
 \section{Introduction}
 
-Most LLM-based tutoring systems are stateless: every learner receives the same explanation regardless of prior knowledge, weak areas, or whether the same concept was explained yesterday. EduAgent addresses this by wrapping an LLM in a \textbf{ReAct-style agentic loop}~\cite{react} — Reason (read learner memory), Act (generate adapted explanation), Observe (evaluate understanding) — that drives measurable adaptation across interactions.
+LLM-based educational assistants often answer the current question but do not reliably remember the learner, detect the learner's difficulty level, retrieve level-appropriate examples, check understanding, or adapt the next explanation. EduAgent addresses this limitation by wrapping LLM generation inside an agentic tutoring loop:
 
-\textbf{Key Contributions:}
-\begin{itemize}[leftmargin=*,noitemsep,topsep=1pt]
-    \item A custom 2,400-sample instructional dataset built with a Gemini-powered quality-filtered pipeline.
-    \item A fine-tuned DistilBERT classifier for 3-class difficulty detection (97.92\% accuracy).
-    \item Two-pass personalized RAG: Pass~1 by query similarity, Pass~2 by learner's weak concepts.
-    \item Four teaching modes selected algorithmically from mastery scores and evaluator output.
-    \item A closed-loop: evaluator structured output $\rightarrow$ mastery update $\rightarrow$ next prompt strategy.
-    \item All prompts, instruction blocks, and memory hints fully specified.
-\end{itemize}
+\[
+\text{Ask} \rightarrow \text{Classify} \rightarrow \text{Retrieve} \rightarrow \text{Teach} \rightarrow \text{Evaluate} \rightarrow \text{Remember} \rightarrow \text{Adapt}.
+\]
 
-% ==========================================================
+The updated EduAgent repository implements this loop as a working application rather than a static notebook. It includes authentication, SQLite-backed learner profiles, a local DistilBERT classifier, semantic retrieval using \texttt{all-MiniLM-L6-v2}, LLM-based Tutor and Evaluator agents, an adaptive Memory Agent, voice input/output modules, dashboard visualizations, and evaluation scripts.
+
+\subsection{Main Research Contributions}
+
+\begin{contribbox}
+\begin{enumerate}
+    \item \textbf{Dataset upgrade:} Replaced a compact 900-row baseline dataset with a 2,400-row metadata-rich AI/ML tutoring dataset: 25 topics $\times$ 4 subtopics $\times$ 3 difficulty levels $\times$ 8 examples.
+    \item \textbf{Fine-tuned difficulty classifier:} Trained \texttt{distilbert-base-uncased} for 3-class difficulty prediction, achieving 97.92\% test accuracy and 97.91\% macro-F1.
+    \item \textbf{Two-pass personalized RAG:} Pass 1 retrieves examples similar to the learner query; Pass 2 retrieves weak-area examples from the learner profile.
+    \item \textbf{Adaptive teaching modes:} Four modes - default, remedial, clarification, and advance - are selected from evaluator output, mastery scores, weak concepts, and prior explanation styles.
+    \item \textbf{Closed feedback loop:} Follow-up evaluation updates weak areas, mastery, recommendations, and the prompt strategy used in later turns.
+    \item \textbf{Operational application:} The project includes authentication, SQLite persistence, Gradio UI, learner dashboard charts, voice input, voice output, retry-aware LLM client, and unit tests.
+\end{enumerate}
+\end{contribbox}
+
+% =========================================================
 \section{System Architecture}
 
-\subsection{Agentic Loop Overview}
+\subsection{End-to-End Pipeline}
 
-EduAgent has three agents: \textbf{Tutor Agent} (answer generation), \textbf{Evaluator Agent} (follow-up + scoring), and \textbf{Memory Agent} (state transitions). They communicate through a shared learner profile stored in SQLite. Figure~\ref{fig:pipeline} shows the full pipeline.
+Figure~\ref{fig:pipeline} summarizes the updated repository workflow. Blue boxes are deterministic/system components, green boxes are retrieval and memory components, orange boxes are LLM agents, and cylinders represent persistent or reusable data stores.
+
 
 \begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=0.42cm]
-  \node[block]  (login)  {User Login\\(PBKDF2 Auth)};
-  \node[block,  below=of login]  (load)  {Load Learner Profile\\(SQLite WAL)};
-  \node[block,  below=of load]   (q)     {Learner Question};
-  \node[sblock, below=of q]      (clf)   {DistilBERT Classifier\\(beginner / intermediate\\/ advanced)};
-  \node[sblock, below=of clf]    (topic) {Semantic Topic Detector\\(alias table + cosine sim)};
-  \node[sblock, below=of topic]  (rag1)  {Pass-1 RAG\\Top-3 query-driven examples};
-  \node[sblock, below=of rag1]   (rag2)  {Pass-2 RAG\\Top-2 weak-area examples};
-  \node[block,  below=of rag2]   (hints) {Memory Agent\\Build memory \& strategy hints};
-  \node[sblock, below=of hints]  (mode)  {Select Teaching Mode\\(remedial / clarification\\/ advance / default)};
-  \node[dblock, below=of mode]   (tutor) {Tutor Agent\\LLM call (temp = 0.25)};
-  \node[dblock, below=of tutor]  (fq)    {Evaluator Agent\\Generate follow-up (temp = 0.2)};
-  \node[dblock, below=of fq]     (eval)  {Evaluator Agent\\Score reply (temp = 0.0)\\Pydantic validation};
-  \node[block,  below=of eval]   (mem)   {Memory Agent\\Update mastery \& weak areas};
-  \node[block,  below=of mem]    (save)  {Save Profile to SQLite};
+\flushleft
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.82cm and 0.78cm,every node/.style={outer sep=2pt}]
 
-  \foreach \a/\b in {login/load, load/q, q/clf, clf/topic, topic/rag1,
-                     rag1/rag2, rag2/hints, hints/mode, mode/tutor,
-                     tutor/fq, fq/eval, eval/mem, mem/save}
-    \draw[arrow] (\a) -- (\b);
-\end{tikzpicture}
-\caption{EduAgent end-to-end pipeline. Blue = infrastructure,
-         Green = novel components, Orange = LLM agents.}
+\node[proc] (login) {User signup/login\\PBKDF2 auth};
+\node[store, right=0.82cm of login] (sqlite) {SQLite profile\\WAL mode};
+\node[proc, right=0.95cm of sqlite] (question) {Learner question\\text or voice};
+
+\node[proc, below=0.72cm of question] (clf) {DistilBERT classifier\\beginner/intermediate/advanced};
+\node[proc, left=0.85cm of clf] (topic) {Topic detector\\alias + semantic cosine};
+\node[data, left=0.85cm of topic] (rag1) {Pass 1 RAG\\query-similar examples};
+\node[data, below=0.72cm of rag1] (rag2) {Pass 2 RAG\\weak-area examples};
+\node[data, right=0.85cm of rag2] (memory) {Memory Agent\\hints + mastery + history};
+\node[proc, right=0.88cm of memory] (mode) {Teaching-mode selection\\default/remedial/clarification/advance};
+
+\node[agent, below=0.76cm of mode] (tutor) {Tutor Agent\\Gemini LLM answer};
+\node[agent, left=0.83cm of tutor] (follow) {Evaluator Agent\\follow-up question};
+\node[agent, left=0.83cm of follow] (score) {Evaluator Agent\\JSON scoring};
+\node[data, left=0.83cm of score] (update) {Memory update\\weak areas + mastery};
+\node[proc, below=0.76cm of follow] (dashboard) {Gradio dashboard\\charts + insights + TTS};
+
+\draw[arrow,shorten >=3pt,shorten <=3pt] (login.east) -- (sqlite.west);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (sqlite.east) -- (question.west);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (question.south) -- (clf.north);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (clf.west) -- (topic.east);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (topic.west) -- (rag1.east);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (rag1.south) -- (rag2.north);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (rag2.east) -- (memory.west);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (memory.east) -- (mode.west);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (mode.south) -- (tutor.north);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (tutor.west) -- (follow.east);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (follow.west) -- (score.east);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (score.west) -- (update.east);
+\draw[arrow,shorten >=3pt,shorten <=3pt] (update.south) |- (dashboard.west);
+
+\draw[arrow,dashed,shorten >=4pt,shorten <=4pt] (sqlite.south) -- ++(0,-0.34) -| (memory.north);
+
+\end{tikzpicture}}
+\caption{EduAgent end-to-end architecture. The dashed arrow represents cross-turn profile reads.}
 \label{fig:pipeline}
 \end{figure}
 
-\subsection{Module Map}
+\subsection{Repository Module Map}
+
+\begin{longtable}{p{0.29\textwidth}p{0.63\textwidth}}
+\toprule
+\textbf{Module} & \textbf{Role in the system} \\
+\midrule
+\endhead
+\texttt{config/settings.py} & Central configuration: Gemini key/model, dataset path, classifier path, DB file, RAG top-N values, evaluation model, retry settings. \\
+\texttt{ml/classifier.py} & Loads local DistilBERT model from \texttt{models/distilbert\_eduagent\_v2}, falls back to Hugging Face repo, then heuristic classification. Adds calibration for beginner, comparison, and advanced-intent phrasing. \\
+\texttt{ml/embedder.py} & Loads shared \texttt{all-MiniLM-L6-v2} embedder from local cache and exposes a singleton to avoid loading the sentence-transformer twice. \\
+\texttt{ml/topic\_detector.py} & Detects canonical AI/ML topic using alias matching first, then semantic topic vectors or TF-IDF fallback. \\
+\texttt{ml/retriever.py} & Implements level/topic filtering, semantic or TF-IDF retrieval, keyword overlap scoring, complexity penalty, and weak-area retrieval. \\
+\texttt{agents/tutor\_agent.py} & Orchestrates classification, topic detection, Pass 1 RAG, Pass 2 RAG, memory hints, teaching-mode inference, prompt assembly, and answer generation. \\
+\texttt{agents/evaluator\_agent.py} & Generates a conceptual follow-up question and evaluates learner replies into a validated schema: \texttt{good}, \texttt{partial}, or \texttt{poor}. \\
+\texttt{agents/memory\_agent.py} & Maintains profile schema, updates topic counts, mastery, weak areas, used explanation tags, recommendations, and prompt hints. \\
+\texttt{agents/llm\_client.py} & Wraps Gemini calls, OpenAI-style messages, retry logic, timeout, quota detection, and fallback behavior. \\
+\texttt{auth/password\_utils.py} & PBKDF2-SHA256 password hashing with 16-byte salts and \texttt{hmac.compare\_digest}. \\
+\texttt{db/sqlite\_store.py} & SQLite initialization with WAL mode, synchronous=NORMAL, users table, profiles table, and schema migration checks. \\
+\texttt{db/profile\_repository.py} & User CRUD and profile JSON serialization/deserialization with safe JSON defaults. \\
+\texttt{app/main.py} & Gradio callback orchestration: login, signup, question asking, follow-up evaluation, profile save, chart generation, retrieved-example display, voice callbacks. \\
+\texttt{app/ui.py} & Full Gradio layout and CSS: auth hero, chat panel, dashboard cards, charts, retrieved examples, system insights, voice controls. \\
+\texttt{voice/} & Whisper speech-to-text wrapper, local TTS wrapper using Piper if available or \texttt{pyttsx3} fallback, and UI utilities. \\
+\texttt{eval/} and \texttt{rag\_evaluation.py} & Retrieval/generation evaluation, LLM-as-judge scoring, checkpointing, pass-2 weak-area evaluation. \\
+\texttt{tests/} & Unit tests for authentication, profile normalization, and memory/mastery behavior. \\
+\bottomrule
+\caption{Updated repository module map.}
+\end{longtable}
+
+% =========================================================
+\section{Dataset Construction and Quality}
+
+\subsection{Dataset Used by the Updated Application}
+
+The active dataset path in \texttt{config/settings.py} is:
+
+\begin{lstlisting}
+DATASET_FILE = str(BASE_DIR / "datasets" / "data_easy" / "eduagent_dataset_easy_v2.csv")
+\end{lstlisting}
+
+The submitted dataset has 2,400 rows and 19 columns. Its generation target is exactly balanced:
+
+\[
+25 \text{ topics} \times 4 \text{ subtopics} \times 3 \text{ levels} \times 8 \text{ examples} = 2400.
+\]
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l r}
+\toprule
+\textbf{Property} & \textbf{Value in updated repo} \\
+\midrule
+Rows & 2,400 \\
+Columns & 19 \\
+Difficulty levels & beginner, intermediate, advanced \\
+Rows per level & 800 each \\
+Topics & 25 \\
+Rows per topic & 96 each \\
+Subtopics & 99 unique subtopic strings \\
+Examples per topic-subtopic-level cell & 8 \\
+Duplicate questions & 0 \\
+Duplicate answers & 0 \\
+Average question length & 22.60 words \\
+Average answer length & 119.16 words \\
+Generator provider/model & Gemini / \texttt{gemini-2.5-flash} \\
+Prompt version stored in data & \texttt{eduagent\_easy\_batch\_v1} \\
+\bottomrule
+\end{tabular}
+\caption{Dataset statistics computed from \texttt{datasets/data\_easy/eduagent\_dataset\_easy\_v2.csv}.}
+\end{table}
+
+\subsection{Metadata Schema}
+
+The dataset is not only a question-answer set; it is a pedagogy-aware instruction dataset. Its columns include:
 
 \begin{center}
-\scriptsize
-\begin{tabular}{ll}
+\small
+\begin{tabular}{p{0.30\textwidth}p{0.60\textwidth}}
 \toprule
-\textbf{Module} & \textbf{Role} \\
+\textbf{Column group} & \textbf{Examples} \\
 \midrule
-\texttt{ml/classifier.py} & DistilBERT inference \\
-\texttt{ml/embedder.py} & Shared sentence-transformer singleton \\
-\texttt{ml/topic\_detector.py} & Two-tier topic detection \\
-\texttt{ml/retriever.py} & Two-pass semantic RAG \\
-\texttt{agents/tutor\_agent.py} & Prompt assembly + LLM call \\
-\texttt{agents/evaluator\_agent.py} & Follow-up + evaluation \\
-\texttt{agents/memory\_agent.py} & Mastery model + hints \\
-\texttt{agents/llm\_client.py} & Groq API + retry + fallback \\
-\texttt{db/profile\_repository.py} & Profile CRUD \\
-\texttt{auth/password\_utils.py} & PBKDF2 hashing \\
-\texttt{app/main.py} & Gradio UI + orchestration \\
+Identity and taxonomy & \texttt{id}, \texttt{topic}, \texttt{subtopic}, \texttt{level}, \texttt{question\_angle} \\
+Instruction content & \texttt{question}, \texttt{answer} \\
+Length diagnostics & \texttt{question\_word\_count}, \texttt{answer\_word\_count} \\
+Pedagogical annotations & \texttt{key\_concepts}, \texttt{expected\_reasoning}, \texttt{difficulty\_rationale}, \texttt{why\_this\_fits\_level}, \texttt{concepts\_covered}, \texttt{possible\_learner\_confusion} \\
+Generation metadata & \texttt{generator\_provider}, \texttt{generator\_model}, \texttt{prompt\_version}, \texttt{timestamp} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-% ==========================================================
-\section{Dataset Construction}
+These extra fields are useful for retrieval, reportability, curriculum-aware filtering, and future instruction-tuning experiments.
 
-No public labeled dataset exists for AI/ML educational question difficulty. We built a custom \textbf{2,400-sample} dataset using \textbf{Gemini 2.5 Flash} at temperature~0.45 with structured Pydantic output.
+\subsection{Comparison with the Original 900-Row Dataset}
 
-\textbf{Taxonomy:} 25 topics $\times$ 4 subtopics $\times$ 3 levels $\times$ 8 samples $= 2{,}400$ (perfectly balanced: 800 per level).
+The updated dataset is substantially richer than the original 900-row dataset. The detailed analysis document reports the following structural comparison.
 
-\textbf{Quality Filters (applied to every generated sample):}
-\begin{enumerate}[leftmargin=*,noitemsep,topsep=1pt]
-    \item \textbf{Length bounds} — answer word count enforced per level (beginner 50--130, intermediate 75--170, advanced 95--230 words).
-    \item \textbf{Level leakage} — reject if banned phrases appear (``for a beginner'', ``difficulty level'', etc.).
-    \item \textbf{Near-duplicate} — reject if Jaccard~$\geq 0.82$ or SequenceMatcher~$\geq 0.90$ vs. any accepted sample in the same cell.
-    \item \textbf{Generic patterns} — reject ``What is X?'' style questions at intermediate/advanced levels.
-\end{enumerate}
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Metric} & \textbf{Dataset 1: 900 rows} & \textbf{Dataset 2: 2400 rows} \\
+\midrule
+Rows & 900 & 2,400 \\
+Columns & 5 & 19 \\
+Question avg. words & 22.0 & 22.6 \\
+Answer avg. words & 62.13 & 119.16 \\
+Question duplicate \% & 0.0 & 0.0 \\
+Answer duplicate \% & 0.0 & 0.0 \\
+Question vocabulary size & 2,025 & 3,706 \\
+Answer vocabulary size & 4,474 & 8,273 \\
+Metadata richness & Low & Very high \\
+\bottomrule
+\end{tabular}
+\caption{Dataset comparison from the detailed dataset analysis, verified against the repository dataset where possible.}
+\end{table}
 
-\textbf{Split:} 80/10/10 stratified by level and topic (train 1920, val 240, test 240).
+\subsection{Batch Dataset Generation Pipeline}
 
-% ==========================================================
-\section{DistilBERT Difficulty Classifier}
-\label{sec:classifier}
+The updated generator is \texttt{datasets/generate\_dataset\_v2.py}. It uses Gemini structured batch output but keeps deterministic local filters in the hot loop. The script design is documented in its header as follows: generate multiple candidate Q/A rows per topic-subtopic-level cell, apply local filters, save continuously to JSONL and CSV, and avoid model self-validation inside the hot loop to reduce wasted calls.
 
-\subsection{Architecture and Choice}
+\subsubsection{Generation Taxonomy}
 
-\texttt{distilbert-base-uncased}~\cite{distilbert} (66M params, 6 Transformer layers) was chosen over full BERT for 40\% fewer parameters and 60\% faster inference — critical for real-time tutoring. A 3-class classification head is appended on the \texttt{[CLS]} token. Two engineering fixes were required at inference:
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.18\textwidth}p{0.72\textwidth}}
+\toprule
+\textbf{Level} & \textbf{Question angles in the updated generator} \\
+\midrule
+Beginner & definition with simple example; real-world analogy; why it matters; common misconception; basic comparison; high-level working; first learning step; simple consequence \\
+Intermediate & implementation detail; trade-off analysis; debugging scenario; evaluation decision; dataset impact; workflow choice; comparison between methods; practical failure mode \\
+Advanced & edge case analysis; scalability concern; theoretical intuition; research limitation; robustness concern; system design integration; probabilistic interpretation; complexity analysis \\
+\bottomrule
+\end{tabular}
+\caption{Level-specific question-angle bank used by the generator.}
+\end{table}
 
-\begin{lstlisting}[language=Python]
-# Fix 1: AutoTokenizer avoids BertTokenizer path error
-tokenizer = AutoTokenizer.from_pretrained(CLASSIFIER_PATH)
-model     = AutoModelForSequenceClassification.from_pretrained(
-                CLASSIFIER_PATH)
-# Fix 2: DistilBERT has no segment embeddings
-inputs = tokenizer(question, return_tensors="pt",
-         max_length=128, truncation=True, padding="max_length")
-inputs.pop("token_type_ids", None)  # removes TypeError
-logits = model(**inputs).logits
-level  = LABELS[torch.argmax(logits).item()]
+\subsubsection{Local Quality Filters}
+
+The script enforces level leakage rejection, length bounds, duplicate/near-duplicate checks, and generic-pattern rejection for intermediate/advanced rows.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Level} & \textbf{Question word range} & \textbf{Answer word range} \\
+\midrule
+Beginner & 7--45 & 50--130 \\
+Intermediate & 9--60 & 75--170 \\
+Advanced & 11--75 & 95--230 \\
+\bottomrule
+\end{tabular}
+\caption{Deterministic local length filters from the updated dataset generator.}
+\end{table}
+
+Near-duplicates are rejected when \texttt{SequenceMatcher} ratio $\ge 0.90$ or Jaccard token similarity $\ge 0.82$ within the same topic-subtopic-level cell.
+
+\subsection{Dataset Generation Prompt}
+
+The full prompt generated by \texttt{build\_batch\_prompt()} is parameterized by \texttt{topic}, \texttt{subtopic}, \texttt{level}, \texttt{candidate\_count}, and existing questions. The core template is:
+
+\begin{lstlisting}
+You are generating high-quality rows for an AI/ML tutoring dataset called EduAgent.
+
+Generate {candidate_count} diverse candidate rows.
+Only generate rows for this exact cell:
+Topic: {topic}
+Subtopic: {subtopic}
+Difficulty level: {level}
+
+Existing questions to avoid:
+{existing_block}
+
+Use these angles across the rows where possible:
+{angles}
+
+Hard quality rules:
+- Each question must be specific, useful, and end with a question mark.
+- Question length must be {q_min} to {q_max} words.
+- Answer length must be {a_min} to {a_max} words.
+- Do not mention the difficulty label in the question or answer.
+- Do not write "For a beginner", "For an intermediate", or "For an advanced".
+- Do not use markdown, bullets, numbered lists, tables, or code blocks.
+- Avoid generic questions like "What is {subtopic}?" unless the beginner row adds context and learning value.
+- Each answer must be factually correct, self-contained, and pedagogically useful.
+- Questions must be meaningfully different from each other and from the existing questions.
+
+Level expectations:
+Beginner: simple explanation, intuitive example, no equations, minimal jargon.
+Intermediate: practical reasoning, comparison, debugging, implementation, or evaluation.
+Advanced: edge cases, assumptions, scalability, theory, robustness, or system design reasoning.
+
+Return valid JSON only in this exact shape:
+{
+  "rows": [
+    {
+      "question": "...",
+      "answer": "...",
+      "question_angle": "...",
+      "key_concepts": ["...", "..."],
+      "expected_reasoning": "...",
+      "possible_learner_confusion": "...",
+      "difficulty_rationale": "...",
+      "why_this_fits_level": "..."
+    }
+  ]
+}
 \end{lstlisting}
+
+% =========================================================
+\section{Difficulty Classification}
+
+\subsection{Classifier Design}
+
+The updated repository uses a local fine-tuned \texttt{distilbert-base-uncased} sequence classifier stored at:
+
+\begin{lstlisting}
+models/distilbert_eduagent_v2
+\end{lstlisting}
+
+The model predicts three labels: \texttt{beginner}, \texttt{intermediate}, and \texttt{advanced}. \texttt{ml/classifier.py} first attempts to load the local model. If local weights are unavailable, it attempts a Hugging Face Hub fallback via \texttt{CLASSIFIER\_HF\_REPO}. If both fail, the system falls back to deterministic heuristics. The classifier removes \texttt{token\_type\_ids} before inference because DistilBERT does not use segment embeddings.
 
 \subsection{Training Configuration}
 
-\begin{center}
-\scriptsize
+The saved \texttt{training\_config.json} in the repository records:
+
+\begin{table}[H]
+\centering
 \begin{tabular}{ll}
 \toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
 Base model & \texttt{distilbert-base-uncased} \\
-Epochs & 3 (early stop patience=2 on val F1) \\
-Batch size & 8 \quad Max length: 128 tokens \\
-Learning rate & $2{\times}10^{-5}$ (AdamW) \\
-Weight decay & 0.01 \quad Warmup ratio: 0.06 \\
-Seed & 42 \quad Framework: HF Transformers \\
+Epochs & 3 \\
+Batch size & 8 \\
+Max length & 128 \\
+Learning rate & $2 \times 10^{-5}$ \\
+Weight decay & 0.01 \\
+Warmup ratio & 0.06 \\
+Early stopping patience & 2 \\
+Random seed & 42 \\
+Train/validation/test split & 80/10/10 stratified by level \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{Training configuration saved by the updated repository.}
+\end{table}
 
-\subsection{Results}
+The train/validation/test files saved in the model folder contain 1,920, 240, and 240 examples respectively.
+
+\subsection{Classifier Results}
+
+The repository classification report gives the following test-set performance:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Support} \\
+\midrule
+Beginner & 0.9875 & 0.9875 & 0.9875 & 80 \\
+Intermediate & 0.9870 & 0.9500 & 0.9682 & 80 \\
+Advanced & 0.9639 & 1.0000 & 0.9816 & 80 \\
+\midrule
+Accuracy & \multicolumn{3}{r}{0.9792} & 240 \\
+Macro average & 0.9795 & 0.9792 & 0.9791 & 240 \\
+Weighted average & 0.9795 & 0.9792 & 0.9791 & 240 \\
+\bottomrule
+\end{tabular}
+\caption{Fine-tuned DistilBERT test performance.}
+\label{tab:classifier-results}
+\end{table}
+
+The confusion matrix is:
 
 \begin{center}
-\scriptsize
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Class} & \textbf{P} & \textbf{R} & \textbf{F1} & \textbf{n} \\
+& \textbf{Pred. beginner} & \textbf{Pred. intermediate} & \textbf{Pred. advanced} \\
 \midrule
-Beginner & 98.75 & 98.75 & 98.75 & 80 \\
-Intermediate & 98.70 & 95.00 & 96.82 & 80 \\
-Advanced & 96.39 & 100.00 & 98.16 & 80 \\
-\midrule
-\textbf{Macro avg} & \textbf{97.95} & \textbf{97.92} & \textbf{97.91} & 240 \\
-\textbf{Accuracy} & \multicolumn{4}{c}{\textbf{97.92\%}} \\
+True beginner & 79 & 1 & 0 \\
+True intermediate & 1 & 76 & 3 \\
+True advanced & 0 & 0 & 80 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Confusion matrix} (rows=true, cols=predicted):
-\begin{center}
-\scriptsize
-\begin{tabular}{c|ccc}
-\toprule
-& Beg. & Int. & Adv. \\
-\midrule
-Beg. & \cellcolor{cmhigh}\textbf{79} & \cellcolor{cmlow}1 & \cellcolor{cmzero}0 \\
-Int. & \cellcolor{cmlow}1 & \cellcolor{cmhigh}\textbf{76} & \cellcolor{cmlow}3 \\
-Adv. & \cellcolor{cmzero}0 & \cellcolor{cmzero}0 & \cellcolor{cmhigh}\textbf{80} \\
-\bottomrule
-\end{tabular}
-\end{center}
+Advanced examples are never misclassified as easier levels in the saved test split. Intermediate has the highest confusion, with three intermediate examples predicted as advanced.
 
-All 5 errors are \textit{adjacent-class} (pedagogically benign). Advanced is never misclassified.
+\subsection{Calibration Layer}
 
-\textbf{Baseline comparison:}
-\begin{center}
-\scriptsize
-\begin{tabular}{lcc}
-\toprule
-\textbf{Method} & \textbf{Acc.} & \textbf{Macro F1} \\
-\midrule
-Majority class (always ``intermediate'') & 33.3\% & 16.7\% \\
-Keyword heuristic (production fallback) & 62.1\% & 60.4\% \\
-\textbf{Fine-tuned DistilBERT (ours)} & \textbf{97.92\%} & \textbf{97.91\%} \\
-\midrule
-Improvement over heuristic & \textbf{+35.8 pp} & \textbf{+37.5 pp} \\
-\bottomrule
-\end{tabular}
-\end{center}
+The repository does not blindly trust the neural classifier in every case. It adds a small post-prediction calibration layer:
 
-% ==========================================================
-\section{Novel Components}
+\begin{itemize}
+    \item Short definition-style questions can be forced to beginner.
+    \item Ordinary comparison questions can be treated as intermediate.
+    \item Comparison questions with convergence, derivation, proof, formal, loss landscape, or complexity markers can be upgraded to advanced.
+    \item Explicit advanced markers such as \texttt{derive}, \texttt{prove}, \texttt{theorem}, \texttt{convergence}, \texttt{architecture}, \texttt{attention mechanism}, \texttt{backpropagation}, and \texttt{gradient flow} can override raw predictions.
+\end{itemize}
 
-\subsection{Shared Sentence-Transformer Singleton}
+This makes the deployed classifier more robust to short and ambiguous real learner queries than a pure argmax classifier.
 
-\texttt{ml/embedder.py} loads \texttt{all-MiniLM-L6-v2} (384-dim, 22M params) once at import and exports \texttt{embed\_model}. Both \texttt{retriever.py} and \texttt{topic\_detector.py} import the same Python object — verified by \texttt{id()} equality. This avoids loading 90\,MB twice.
+% =========================================================
+\section{Semantic Topic Detection}
 
-The line \texttt{os.environ.setdefault("USE\_TF", "0")} must appear \textit{before} the import to prevent the Keras~3 / tf-keras conflict:
-\begin{lstlisting}
-ImportError: Keras 3 and tf.keras cannot be imported simultaneously
-\end{lstlisting}
+The topic detector uses a two-tier design:
 
-\subsection{Two-Tier Semantic Topic Detection}
+\begin{enumerate}
+    \item \textbf{Alias tier:} space-padded exact substring matching against a manually curated alias table. This handles terms such as \texttt{cnn}, \texttt{rag}, \texttt{llm}, \texttt{tfidf}, \texttt{transformer architecture}, and \texttt{bias mitigation}.
+    \item \textbf{Semantic tier:} for each topic in the current level slice, the system builds a rich topic document of the form \texttt{topic name: all questions for that topic}. It encodes topic documents with the shared \texttt{all-MiniLM-L6-v2} embedder and selects the highest cosine-similarity topic when the score is convincing.
+\end{enumerate}
+
+If the sentence-transformer cannot load locally, the detector falls back to a TF-IDF topic index. If all similarity scores are too low, the default topic is selected from general topics such as machine learning basics, neural networks, or classification.
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=0.35cm]
-  \node[tinyblock] (q)    {User Question};
-  \node[tinydecision, below=0.35cm of q]   (alias) {Alias\\match?};
-  \node[tinyblock, right=1.3cm of alias]   (ret1)  {Return\\canonical topic};
-  \node[tinyblock, below=0.65cm of alias]  (enc)   {Encode question\\(MiniLM-L6-v2)};
-  \node[tinyblock, below=0.35cm of enc]    (cos)   {Cosine sim vs\\cached topic vectors};
-  \node[tinyblock, below=0.35cm of cos]    (best)  {Return best\\matching topic};
-  \node[tinyblock, right=1.3cm of best]    (def)   {Fallback: ML\\basics};
-
-  \draw[sarrow] (q)    -- (alias);
-  \draw[sarrow] (alias) -- node[above,font=\tiny]{yes} (ret1);
-  \draw[sarrow] (alias) -- node[left,font=\tiny]{no}  (enc);
-  \draw[sarrow] (enc)  -- (cos);
-  \draw[sarrow] (cos)  -- (best);
-  \draw[sarrow] (best) -- node[above,font=\tiny]{score=0} (def);
-\end{tikzpicture}
-\caption{Two-tier semantic topic detection.}
-\label{fig:topic}
+\resizebox{0.86\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.95cm]
+\node[proc] (q) {Clean learner query};
+\node[decision, below=of q] (alias) {Alias match?};
+\node[proc, right=2.7cm of alias] (canonical) {Return canonical topic};
+\node[proc, below=of alias] (encode) {Encode query\\MiniLM or TF-IDF};
+\node[data, below=of encode] (compare) {Cosine similarity\\against cached topic vectors};
+\node[decision, below=of compare] (threshold) {Score $\ge 0.15$?};
+\node[proc, right=2.7cm of threshold] (best) {Return best topic};
+\node[proc, below=of threshold] (default) {Return default\\general ML topic};
+\draw[arrow] (q) -- (alias);
+\draw[arrow] (alias) -- node[above]{yes} (canonical);
+\draw[arrow] (alias) -- node[right]{no} (encode);
+\draw[arrow] (encode) -- (compare);
+\draw[arrow] (compare) -- (threshold);
+\draw[arrow] (threshold) -- node[above]{yes} (best);
+\draw[arrow] (threshold) -- node[right]{no} (default);
+\end{tikzpicture}}
+\caption{Updated two-tier topic detection: alias matching followed by semantic or TF-IDF fallback.}
 \end{figure}
 
-\textbf{Tier~1 — Alias table:} 14 canonical topics mapped to known abbreviations and variants. Matching uses space-padded substring search to prevent partial matches (\texttt{"ml"} does not match inside \texttt{"html"}). Example aliases:
+% =========================================================
+\section{Two-Pass Personalized RAG}
 
-\begin{center}
-\scriptsize
-\begin{tabular}{ll}
-\toprule
-\textbf{Topic} & \textbf{Sample Aliases} \\
-\midrule
-machine learning basics & ml, types of ml, supervised, unsupervised \\
-neural networks & dl, deep learning, ann, perceptron, mlp \\
-gradient descent & sgd, learning rate, optimizer, momentum \\
-transformer models & bert, self attention, encoder decoder \\
-RAG & retrieval augmented generation \\
-\bottomrule
-\end{tabular}
-\end{center}
+\subsection{Pass 1: Query-Similar Educational Retrieval}
 
-\textbf{Tier~2 — Semantic cosine:} Each topic is encoded as \texttt{"\{topic name\}: \{all its questions concatenated\}"} into a 384-dim vector. Topic vectors are cached per \texttt{(dataset, level)} pair. At query time only the user question is encoded; $O(1)$ model calls per query regardless of dataset size.
+\texttt{ml/retriever.py} loads the active dataset once and caches an index for each \texttt{(level, topic)} slice. For semantic retrieval, it encodes questions using \texttt{all-MiniLM-L6-v2}. If sentence-transformers are unavailable, the app falls back to TF-IDF with unigrams and bigrams.
 
-\subsection{Two-Pass Personalized RAG}
+The final score combines semantic similarity, keyword overlap, and complexity penalty:
+
+\[
+\text{score} = 0.75 \cdot \text{semantic\_cosine} + 0.25 \cdot \text{keyword\_overlap} - \text{complexity\_penalty}.
+\]
+
+The complexity penalty is designed to prevent overly difficult examples from being selected for simpler queries. It adds 0.15 when the candidate question is long and another 0.15 for hard terms such as \texttt{derive}, \texttt{proof}, \texttt{convergence}, \texttt{subgradient}, or \texttt{vanishing gradient}.
+
+\subsection{Pass 2: Weak-Area Retrieval}
+
+Pass 2 is triggered when the learner profile contains weak concepts for the detected topic. For each weak concept, the query is:
+
+\begin{lstlisting}
+query = f"{concept} {topic}".strip()
+\end{lstlisting}
+
+The retriever pools results across weak concepts, removes duplicates and rows already returned in Pass 1, and returns up to \texttt{RAG\_WEAK\_TOP\_N=2} examples.
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=0.35cm]
-  \node[tinyblock] (q)      {Question + level + topic};
-  \node[tinyblock, below=0.35cm of q]      (filter) {Filter by level\\and answer length};
-  \node[tinyblock, below=0.35cm of filter] (p1enc)  {Encode question\\(MiniLM-L6-v2)};
-  \node[tinyblock, below=0.35cm of p1enc]  (p1cos)  {Cosine sim $-$\\complexity penalty};
-  \node[tinyblock, below=0.35cm of p1cos]  (p1out)  {\textbf{Pass-1: Top-3 examples}};
-
-  \node[tinyblock, below=0.4cm of p1out]   (weak)   {Learner weak concepts\\from profile};
-  \node[tinyblock, below=0.35cm of weak]   (p2enc)  {Encode each:\\``concept\,+\,topic''};
-  \node[tinyblock, below=0.35cm of p2enc]  (p2cos)  {Pool, deduplicate\\vs Pass-1};
-  \node[tinyblock, below=0.35cm of p2cos]  (p2out)  {\textbf{Pass-2: Top-2 examples}};
-
-  \node[tinyblock, below=0.4cm of p2out]   (inject) {Inject both into\\tutor prompt};
-
-  \foreach \a/\b in {q/filter, filter/p1enc, p1enc/p1cos, p1cos/p1out,
-                     p1out/weak, weak/p2enc, p2enc/p2cos, p2cos/p2out, p2out/inject}
-    \draw[sarrow] (\a) -- (\b);
-\end{tikzpicture}
-\caption{Two-pass personalized RAG pipeline.}
-\label{fig:rag}
+\resizebox{0.90\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.78cm]
+\node[proc] (query) {Question + predicted level + detected topic};
+\node[proc, below=of query] (filter) {Filter dataset by level/topic/subtopic};
+\node[data, below=of filter] (score) {Semantic cosine + keyword overlap - penalty};
+\node[data, below=of score] (pass1) {Pass 1 top-3 examples};
+\node[store, right=3.7cm of filter] (profile) {Learner profile\\weak concepts};
+\node[data, below=of profile] (weakquery) {For each weak concept:\\encode concept + topic};
+\node[data, below=of weakquery] (pass2) {Pass 2 top-2 weak-area examples};
+\node[agent, below=1.2cm of $(pass1)!0.5!(pass2)$] (tutor) {Tutor prompt receives\\Pass 1 + Pass 2 + memory hints};
+\draw[arrow] (query) -- (filter);
+\draw[arrow] (filter) -- (score);
+\draw[arrow] (score) -- (pass1);
+\draw[arrow] (profile) -- (weakquery);
+\draw[arrow] (weakquery) -- (pass2);
+\draw[arrow] (pass1) -- (tutor);
+\draw[arrow] (pass2) -- (tutor);
+\end{tikzpicture}}
+\caption{Two-pass RAG: query relevance plus personalized weak-area retrieval.}
 \end{figure}
 
-\textbf{Complexity penalty:} Each retrieved example is penalized by up to 0.30 before ranking: +0.15 if answer $>$18 words; +0.15 if any hard term (``derive'', ``convergence'', ``subgradient'', etc.) appears. This prevents advanced examples from being retrieved for beginner queries despite high surface similarity.
+\subsection{RAG Evaluation Results}
 
-\textbf{Pass-2 query:} For each weak concept (e.g., ``chain rule''), the query is \texttt{f"\{concept\} \{topic\}"} — encoding both the concept and its context. Results across all concepts are pooled, deduplicated against Pass-1, and the top-2 returned.
+The current repository stores a reproducible 18-question RAG evaluation checkpoint. The saved report states \texttt{RAG\_TOP\_N=3}. The main results are:
 
-\subsection{Mastery Model with Diminishing Returns}
-
-The mastery score $m \in [0, 1]$ per topic is initialized at \textbf{0.5} (maximum-entropy prior) and updated after every evaluation:
-
-\begin{align}
-\text{good:}\quad & m \leftarrow \min(1.0,\; m + 0.20 \times (1-m)) \\
-\text{partial:}\quad & m \leftarrow \max(0.0,\; m - 0.06) \\
-\text{poor:}\quad & m \leftarrow \max(0.0,\; m - 0.18)
-\end{align}
-
-The factor $(1-m)$ in Rule~(1) guarantees diminishing returns: gain at $m{=}0.5$ is $0.10$; at $m{=}0.9$ it is only $0.02$. This prevents artificial saturation after a few correct answers.
-
-\textbf{Worked example (gradient descent):}
-\begin{center}
-\scriptsize
-\begin{tabular}{cccc}
+\begin{table}[H]
+\centering
+\begin{tabular}{lrl}
 \toprule
-\textbf{Turn} & \textbf{Eval} & \textbf{New $m$} & \textbf{Mode} \\
+\textbf{Layer} & \textbf{Metric} & \textbf{Saved checkpoint} \\
 \midrule
-0 & --- & 0.50 & default \\
-1 & good & 0.60 & default \\
-2 & partial & 0.54 & clarification \\
-3 & poor & 0.36 & \textbf{remedial} \\
-4 & good & 0.49 & clarification \\
-5 & good & 0.59 & clarification \\
-6 & good & 0.67 & clarification \\
-7 & good & 0.74 & clarification \\
-8 & good & 0.79 & \textbf{advance} \\
+Retrieval & Hit Rate@3 & 83.3\% \\
+Retrieval & MRR & 0.8333 \\
+Retrieval & Topic Precision & 83.3\% \\
+Retrieval & Level Precision & 100.0\% \\
+Retrieval & Average Semantic Similarity & 0.7153 \\
+Retrieval & Level Detection Accuracy in RAG sample & 77.8\% \\
+Generation & Faithfulness & 5.00 / 5 \\
+Generation & Answer Relevancy & 5.00 / 5 \\
+Generation & Context Utilization & 4.44 / 5 \\
+Generation & Level Fit & 4.94 / 5 \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{Saved RAG evaluation checkpoint.}
+\label{tab:rag-current}
+\end{table}
 
-\subsection{Used-Explanation Tracking}
 
-After every tutor response, the tag \texttt{f"\{level\}-\{mode\}"} (e.g., \texttt{"intermediate-clarification"}) is appended (once, deduplicated) to \texttt{profile["used\_explanations"][topic]}. The memory hint then instructs the LLM:
+\begin{cautionbox}
+A later summarized evaluation run reports a stronger retrieval scorecard (Hit Rate@3 = 88.9\%, MRR = 0.8889, Topic Precision = 88.9\%, Level Precision = 100\%, and Average Semantic Similarity = 0.7172). The conservative values in Table~\ref{tab:rag-current} are retained as the primary checkpoint because they are tied to the saved per-question evaluation artifacts.
+\end{cautionbox}
+
+\subsection{Weak-Area Retrieval Results}
+
+The repository also stores \texttt{eval/pass2\_eval\_results.json}. It evaluates five simulated learner weakness profiles across backpropagation, RNNs, overfitting, attention, and CNNs. Results:
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.31\textwidth}p{0.13\textwidth}Y}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Interpretation} \\
+\midrule
+Profiles evaluated & 5 & Five different topic/weak-concept configurations. \\
+Retrieved examples per profile & 2 & Exactly two examples returned per case. \\
+Keyword relevance & 100\% & Retrieved examples contained weak-area concepts. \\
+Average semantic similarity & 0.4931 & Moderate similarity is expected because weak concepts are short queries. \\
+\bottomrule
+\end{tabularx}
+\caption{Pass-2 personalized weak-area retrieval evaluation.}
+\end{table}
+
+Examples include retrieving chain-rule and gradient-flow backpropagation examples, pooling and feature-map CNN examples, and attention-score/QKV examples for advanced attention weaknesses.
+
+% =========================================================
+\section{Tutor Agent and Prompting Strategy}
+
+\subsection{Tutor Prompt Assembly}
+
+The Tutor Agent uses the classifier level, detected topic, retrieved examples, weak-area examples, memory hint, evaluation strategy hint, and teaching mode. The updated code explicitly separates a system instruction from the user prompt.
+
+\subsubsection{Tutor System Message}
+
 \begin{lstlisting}
-Avoid repeating the exact same prior explanation style.
-Previously used: beginner-default, intermediate-remedial.
+You are EduAgent, an adaptive AI tutor specializing in {topic}.
+You MUST stay focused on {topic} throughout your answer.
+Do not drift into unrelated ML concepts unless {topic} itself explicitly requires them.
+Pitch your explanation at {level} level.
 \end{lstlisting}
 
-% ==========================================================
-\section{Agent Prompts}
-
-\subsection{Tutor Agent — Complete Prompt}
-\label{sec:tutor_prompt}
-
-Sent to \texttt{llama-3.3-70b-versatile} via Groq at \textbf{temperature=0.25}. Every placeholder is resolved at runtime.
+\subsubsection{Tutor User Prompt Template}
 
 \begin{lstlisting}
-You are EduAgent, an adaptive AI tutor.
+QUESTION: {user_question}
+TOPIC: {topic}{memory_section}{eval_section}
 
-Student question:
-{user_question}
+RETRIEVED KNOWLEDGE BASE EXAMPLES - these are your PRIMARY source:
+{examples_text}{weak_rag_section}
 
-Detected student level:
-{level}
+GROUNDING RULES (follow strictly):
+1. Build your answer directly upon the facts, concepts, and explanations in the retrieved examples above.
+2. Every key claim in your answer should trace back to the retrieved examples.
+3. You may expand or re-explain retrieved content - but do NOT ignore it.
+4. Do NOT copy retrieved text verbatim - synthesize and adapt in your own words.
+5. Do NOT introduce facts or concepts that contradict the retrieved examples.
+6. Do NOT include citation markers or bracketed source references such as [1], [2], or [3].
 
-Detected topic:
-{topic}
+LEVEL GUIDE:
+- beginner: simple words, analogies, no jargon
+- intermediate: moderate detail, 1-2 key terms explained
+- advanced: technical depth, assume background knowledge
 
-Learner memory hint:
-{memory_hint}
+ANSWER FORMAT:
+- Use short bullet points.
+- Start with the direct answer in the first bullet.
+- Use 3 to 5 bullets total.
+- Keep each bullet to 1 or 2 short sentences.
+- Add a final "Next step:" bullet only when a useful follow-up topic naturally fits.
+- Do not use numbered citations, footnotes, or source brackets.
 
-Recent evaluator strategy hint:
-{evaluation_strategy_hint}
-[or "No recent evaluation strategy available for this topic."]
-
-Retrieved dataset examples (semantically similar):
-Example 1:
-  Question: {q1}
-  Answer:   {a1}
-  Topic:    {t1}
-[... up to 3 examples ...]
-
-Retrieved examples targeting your weak areas ({weak_concepts}):
-Example 4:
-  Question: {q4}
-  Answer:   {a4}
-  Topic:    {t4}
-[... up to 2 examples, omitted if no weak concepts ...]
-
-General instructions:
-- Answer according to the detected level.
-- For beginner: use simple words, intuition, easy examples.
-- For intermediate: moderate detail, 1-2 key technical terms.
-- For advanced: deeper, more technical explanation.
-- Treat retrieved examples as context, not ground truth.
-- Do not copy retrieved examples directly.
-- Use learner memory to avoid repeating explanation styles.
-- If weak area examples exist, address those gaps specifically.
-- If evaluator strategy hint exists, adapt accordingly.
-- Keep the answer educational, structured, and concise.
-
-{mode_specific_instruction}
-
-Now answer the student's question.
+{mode_instruction}
+Answer clearly and concisely in the bullet format above.
 \end{lstlisting}
 
-\subsection{Mode-Specific Instruction Blocks}
-\label{sec:mode_prompts}
+\subsection{Adaptive Teaching Modes}
 
-The \texttt{\{mode\_specific\_instruction\}} placeholder is replaced with one of the following four verbatim blocks, selected by \texttt{build\_mode\_specific\_instruction(teaching\_mode)}.
+\subsubsection{Mode Selection Logic}
 
-\subsubsection{Remedial Mode}
-\textit{Trigger: evaluator=``poor'' OR (mastery~$<$~0.45 AND weak areas/count~$\geq$~3)}
+Mode selection prioritizes the latest same-topic evaluation hint. If no same-topic hint exists, it falls back to profile mastery, weak areas, and topic counts.
 
+\begin{figure}[H]
+\centering
+\resizebox{0.92\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.75cm]
+\node[decision] (eval) {Same-topic\\eval hint?};
+\node[proc, right=2.8cm of eval] (evalmode) {Use mode from\\evaluator hint};
+\node[decision, below=of eval] (rem) {mastery $<0.45$\\and weak/count?};
+\node[proc, right=2.8cm of rem] (remedial) {remedial};
+\node[decision, below=of rem] (clar) {weak areas\\and mastery $\le0.75$?};
+\node[proc, right=2.8cm of clar] (clarification) {clarification};
+\node[decision, below=of clar] (adv) {mastery $>0.75$\\and count $\ge2$?};
+\node[proc, right=2.8cm of adv] (advance) {advance};
+\node[proc, below=of adv] (default) {default};
+\draw[arrow] (eval) -- node[above]{yes} (evalmode);
+\draw[arrow] (eval) -- node[right]{no} (rem);
+\draw[arrow] (rem) -- node[above]{yes} (remedial);
+\draw[arrow] (rem) -- node[right]{no} (clar);
+\draw[arrow] (clar) -- node[above]{yes} (clarification);
+\draw[arrow] (clar) -- node[right]{no} (adv);
+\draw[arrow] (adv) -- node[above]{yes} (advance);
+\draw[arrow] (adv) -- node[right]{no} (default);
+\end{tikzpicture}}
+\caption{Teaching-mode inference in the updated Tutor Agent.}
+\end{figure}
+
+\subsubsection{Mode-Specific Instruction Blocks}
+
+\paragraph{Remedial mode.}
 \begin{lstlisting}
 Mode-specific instructions:
 - Re-teach from scratch.
@@ -472,14 +687,11 @@ Mode-specific instructions:
 - Explain in 4 to 6 short sentences.
 - Focus on one main idea first before adding detail.
 - Avoid abstract definitions unless absolutely necessary.
-- Avoid repeating the same explanation style or analogy
-  used earlier for this topic.
+- Avoid repeating the same explanation style or analogy used earlier for this topic.
 - Start with: "Let's simplify it completely."
 \end{lstlisting}
 
-\subsubsection{Clarification Mode}
-\textit{Trigger: evaluator=``partial'' OR (weak areas AND mastery~$\leq$~0.75)}
-
+\paragraph{Clarification mode.}
 \begin{lstlisting}
 Mode-specific instructions:
 - Briefly restate the main idea in one or two simple sentences.
@@ -489,9 +701,7 @@ Mode-specific instructions:
 - Keep the answer focused and moderately short.
 \end{lstlisting}
 
-\subsubsection{Advance Mode}
-\textit{Trigger: evaluator=``good'' OR (mastery~$>$~0.75 AND topic count~$\geq$~2)}
-
+\paragraph{Advance mode.}
 \begin{lstlisting}
 Mode-specific instructions:
 - Assume the learner understood the basics.
@@ -501,50 +711,22 @@ Mode-specific instructions:
 - Keep the answer clear but more intellectually rich.
 \end{lstlisting}
 
-\subsubsection{Default Mode}
-\textit{Trigger: no evaluator hint AND no strong mastery signal}
-
+\paragraph{Default mode.}
 \begin{lstlisting}
 Mode-specific instructions:
 - Give a normal level-appropriate explanation.
 \end{lstlisting}
 
-\subsection{Mode Selection Flow}
+\subsection{LLM Backend and Fallback}
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=0.35cm]
-  % decisions on the left spine
-  \node[tinydecision] (ev) {Eval hint\\same\\topic?};
-  \node[tinydecision, below=0.7cm of ev]  (ml) {mastery\\$<$0.45 \&\\weak/count?};
-  \node[tinydecision, below=0.7cm of ml]  (wk) {weak areas\\mastery\\$\leq$0.75?};
-  \node[tinydecision, below=0.7cm of wk]  (hi) {mastery\\$>$0.75 \&\\count$\geq$2?};
-  \node[tinyblock,    below=0.6cm of hi]  (def){\textbf{default}};
+The updated repository uses Gemini through \texttt{google.generativeai}. \texttt{agents/llm\_client.py} accepts OpenAI-style message dictionaries, maps them into Gemini roles, passes system text as \texttt{system\_instruction}, and retries with exponential backoff. Rate-limit/quota errors are detected, and after repeated failures the session marks quota exhausted so later calls return fallback content immediately. Tutor fallback answers are generated from retrieved examples only; the code avoids injecting unrelated canned explanations.
 
-  % outcomes on the right
-  \node[tinyblock, right=1.4cm of ev] (eh)  {Mode from\\evaluator hint};
-  \node[tinyblock, right=1.4cm of ml] (rem) {\textbf{remedial}};
-  \node[tinyblock, right=1.4cm of wk] (cla) {\textbf{clarification}};
-  \node[tinyblock, right=1.4cm of hi] (adv) {\textbf{advance}};
+% =========================================================
+\section{Evaluator Agent}
 
-  % arrows
-  \draw[sarrow] (ev) -- node[above,font=\tiny]{yes} (eh);
-  \draw[sarrow] (ev) -- node[left, font=\tiny]{no}  (ml);
-  \draw[sarrow] (ml) -- node[above,font=\tiny]{yes} (rem);
-  \draw[sarrow] (ml) -- node[left, font=\tiny]{no}  (wk);
-  \draw[sarrow] (wk) -- node[above,font=\tiny]{yes} (cla);
-  \draw[sarrow] (wk) -- node[left, font=\tiny]{no}  (hi);
-  \draw[sarrow] (hi) -- node[above,font=\tiny]{yes} (adv);
-  \draw[sarrow] (hi) -- node[left, font=\tiny]{no}  (def);
-\end{tikzpicture}
-\caption{Teaching mode selection logic.}
-\label{fig:modes}
-\end{figure}
+\subsection{Follow-Up Question Prompt}
 
-\subsection{Evaluator Agent — Follow-Up Question Prompt}
-\label{sec:eval_fq}
-
-Sent at \textbf{temperature=0.2} (slight variety across sessions, still focused).
+The Evaluator Agent asks a short conceptual follow-up question after each tutor answer.
 
 \begin{lstlisting}
 You are an evaluator for an adaptive AI tutor.
@@ -558,8 +740,7 @@ Original learner question:
 Tutor's answer:
 {tutor_answer}
 
-Generate ONE short follow-up question to test whether
-the learner understood the main idea.
+Generate ONE short follow-up question to test whether the learner understood the main idea.
 
 Rules:
 - Match the learner's level.
@@ -568,12 +749,9 @@ Rules:
 - Return only the question.
 \end{lstlisting}
 
-\textit{Fallback:} If tutor answer was a local fallback, returns hardcoded: ``In your own words, what is the main idea from the explanation?''
+If the tutor answer is a local fallback, the evaluator uses a safe hardcoded fallback: \textit{In your own words, what is the main idea from the explanation?}
 
-\subsection{Evaluator Agent — Reply Evaluation Prompt}
-\label{sec:eval_reply}
-
-Sent at \textbf{temperature=0.0} (fully deterministic — evaluation drives mastery updates).
+\subsection{Reply Evaluation Prompt}
 
 \begin{lstlisting}
 You are an evaluator for an adaptive AI tutor.
@@ -593,8 +771,7 @@ Return valid JSON only with exactly these keys:
 - understanding_level: one of ["good", "partial", "poor"]
 - weak_concepts: list of short concept names
 - feedback: short educational feedback
-- recommended_action: one of ["advance", "re-explain",
-   "give easier example", "give more practice"]
+- recommended_action: one of ["advance", "re-explain", "give easier example", "give more practice"]
 
 Rules:
 - Be fair and educational.
@@ -604,202 +781,358 @@ Rules:
 - Return valid JSON only.
 \end{lstlisting}
 
-\textbf{Expected output:}
-\begin{lstlisting}
-{
-  "understanding_level": "partial",
-  "weak_concepts": ["chain rule", "gradient flow"],
-  "feedback": "You identified backpropagation's purpose but
-               missed the chain rule's role in computing
-               layer-wise gradients.",
-  "recommended_action": "give more practice"
-}
-\end{lstlisting}
+The output is validated with a Pydantic \texttt{EvaluationResult} schema before it can update the profile. If parsing fails, the system returns a safe \texttt{partial} result rather than incorrectly pushing the learner into remedial mode.
 
-Output is validated by Pydantic \texttt{EvaluationResult} before touching the profile. On any parse failure, safe fallback is returned: \texttt{understanding\_level="partial"} (not ``poor'', to avoid incorrectly triggering remedial mode).
+% =========================================================
+\section{Memory Agent and Personalization}
 
-\subsection{Memory Agent — Hint Strings (Verbatim)}
-\label{sec:memory_hints}
+\subsection{Profile Schema}
 
-The Memory Agent builds natural-language strings injected into the tutor prompt. No LLM call — pure profile logic.
-
-\subsubsection{build\_memory\_hint — All Possible Lines}
+The Memory Agent normalizes every profile to contain:
 
 \begin{lstlisting}
-# topic_count > 1
-"The learner has seen this topic before. Do not restart
-with the exact same beginner introduction."
-
-# weak_areas[topic] non-empty
-"The learner has previously struggled with: {concepts}.
-Address these concepts carefully."
-
-# mastery < 0.40
-"The learner appears weak in this topic. Use simpler
-wording, intuition, and one concrete example."
-
-# mastery > 0.75
-"The learner appears comfortable with this topic.
-You may go slightly deeper than before."
-
-# used_explanations[topic] non-empty
-"Avoid repeating the exact same prior explanation style
-if possible. Previously used: {tags}."
-
-# NONE of the above (first visit, clean state)
-"No strong prior history for this topic.
-Start with a clear explanation."
+sessions, questions_asked, last_level, level_history,
+topics_seen, topic_counts, weak_areas, mastery,
+used_explanations, recommended_next_topics, last_evaluation
 \end{lstlisting}
 
-\subsubsection{build\_evaluation\_strategy\_hint — All Possible Strings}
+It also includes backward-compatibility logic for older profile shapes, such as converting an old list of weak areas into a topic-to-concept dictionary.
 
-Only fires when \texttt{last\_evaluation["topic"] == current topic} (same-topic guard).
+\subsection{Mastery Update Model}
+
+The updated Memory Agent uses a named heuristic mastery model with initial score $m_0=0.5$:
+
+\begin{align}
+\text{good:}\quad & m \leftarrow \min(1.0,\; m + 0.20(1-m)) \\
+\text{partial:}\quad & m \leftarrow \max(0.0,\; m - 0.06) \\
+\text{poor:}\quad & m \leftarrow \max(0.0,\; m - 0.18)
+\end{align}
+
+The good-update rule has diminishing returns: a learner at 0.50 gains 0.10, while a learner at 0.90 gains only 0.02.
+
+\subsection{Weak-Area Logic}
+
+\begin{itemize}
+    \item \textbf{Good evaluation:} clears all weak areas for the topic if no specific concepts are flagged, or removes only the resolved concepts if the evaluator names them.
+    \item \textbf{Partial/poor evaluation:} accumulates evaluator-provided weak concepts.
+    \item \textbf{Repeated revisits:} if a topic is visited at least three times with no weak concept identified, the system adds \texttt{core understanding} as a weak signal.
+\end{itemize}
+
+\subsection{Memory Hint Strings}
+
+The memory hint is purely deterministic profile logic, not an LLM call. It can include these lines depending on the profile:
 
 \begin{lstlisting}
-# understanding_level == "poor"
-"Teaching mode: remedial. The learner did not understand
-the previous explanation. Do NOT repeat the same
-analogy-driven explanation. Re-teach from scratch using
-very simple wording, one tiny concrete example, and a
-short step-by-step explanation."
-
-# understanding_level == "partial"
-"Teaching mode: clarification. The learner understood
-partially. Do not repeat the whole answer. Briefly
-restate the core idea, then focus on the confusing part
-with one clear example."
-
-# understanding_level == "good"
-"Teaching mode: advance. The learner understood the
-previous explanation well. Do not repeat the full
-beginner introduction. Give a slightly deeper explanation
-and connect it to the next related concept."
+The learner has seen this topic before. Do not restart with the exact same beginner introduction.
+The learner has previously struggled with: {concepts}. Address these concepts carefully.
+The learner appears weak in this topic. Use simpler wording, intuition, and one concrete example.
+The learner appears comfortable with this topic. You may go slightly deeper than before.
+Avoid repeating the exact same prior explanation style if possible. Previously used: {tags}.
+No strong prior history for this topic. Start with a clear explanation.
 \end{lstlisting}
 
-Action addenda appended based on \texttt{recommended\_action}:
+\subsection{Evaluation Strategy Hint Strings}
+
+Strategy hints fire only when \texttt{last\_evaluation["topic"]} matches the current topic. This prevents old feedback from unrelated topics from contaminating new explanations.
+
 \begin{lstlisting}
-# "give easier example"
-"Use one very easy real-world or numeric example."
-# "re-explain"
-"Explain from scratch in the simplest possible way."
-# "give more practice"
-"After explaining, add one short practice-style check."
-# "advance"
-"After the explanation, connect to the next topic."
+Teaching mode: remedial. The learner did not understand the previous explanation. Do NOT repeat the same analogy-driven explanation. Re-teach from scratch using very simple wording, one tiny concrete example, and a short step-by-step explanation.
+
+Teaching mode: clarification. The learner understood partially. Do not repeat the whole answer. Briefly restate the core idea, then focus on the confusing part with one clear example.
+
+Teaching mode: advance. The learner understood the previous explanation well. Do not repeat the full beginner introduction. Give a slightly deeper explanation and connect it to the next related concept.
 \end{lstlisting}
 
-If \texttt{weak\_concepts} non-empty, also inserts:
-\begin{lstlisting}
-"Focus mainly on these weak concepts first: {concepts}."
-\end{lstlisting}
+Recommended-action addenda can then request an easier example, re-explanation, more practice, or advancement to the next topic.
 
-% ==========================================================
-\section{Infrastructure}
+% =========================================================
+\section{Application Layer, Security, and Voice}
 
-\subsection{LLM Client (Retry + Fallback)}
+\subsection{Gradio Application}
 
-\texttt{agents/llm\_client.py} wraps the Groq API with retry and graceful fallback:
+The UI uses Gradio with a polished dark theme, authenticated workspace, chat panel, follow-up panel, retrieved-example display, pipeline insights, profile cards, and charts. The charts visualize mastery by topic, topic revisit count, and weak concept count by topic. The \texttt{app/main.py} callbacks orchestrate asking a question, updating the profile, generating a follow-up, evaluating the reply, and refreshing UI state.
 
-\begin{lstlisting}[language=Python]
-attempts = max(1, LLM_MAX_RETRIES + 1)  # default: 3
-for attempt in range(attempts):
-    try:
-        response = client.chat.completions.create(
-            model=model, messages=messages,
-            temperature=temperature,
-            timeout=LLM_TIMEOUT_SECONDS)  # 8s
-        content = response.choices[0].message.content
-        if content and content.strip():
-            return content.strip()
-    except Exception:
-        if attempt < attempts - 1:
-            time.sleep(0.75 * (attempt + 1))  # 0.75s, 1.5s
-if fallback is not None:
-    return fallback
-raise RuntimeError("All retries failed.")
-\end{lstlisting}
+\subsection{Authentication and Storage}
 
-\subsection{Database and Security}
+Passwords are not stored directly. \texttt{auth/password\_utils.py} uses:
 
-\textbf{SQLite WAL mode:} \texttt{PRAGMA journal\_mode=WAL} allows concurrent reads during writes. \texttt{PRAGMA synchronous=NORMAL} balances durability and speed. Complex profile fields (mastery, weak\_areas, etc.) stored as JSON strings, loaded with \texttt{\_safe\_json\_load()} that returns empty defaults on NULL or malformed data.
+\begin{itemize}
+    \item \texttt{os.urandom(16)} for salt generation,
+    \item PBKDF2-HMAC-SHA256 with 200,000 iterations,
+    \item base64 encoding of \texttt{salt || hash},
+    \item \texttt{hmac.compare\_digest} for timing-safe verification.
+\end{itemize}
 
-\textbf{Password security:} PBKDF2-SHA256 with 200,000 iterations (NIST SP~800-132), 16-byte \texttt{os.urandom()} salt, stored as base64(salt~$\|$~hash). Verification uses \texttt{hmac.compare\_digest} for timing-attack resistance.
+SQLite uses WAL mode and \texttt{synchronous=NORMAL}. Profile fields such as weak areas, mastery, topics seen, and recommendations are stored as JSON strings and loaded with safe defaults if corrupted or missing.
 
-% ==========================================================
-\section{Evaluation}
+\subsection{Voice Interaction}
 
-\subsection{Personalization Evidence}
+The updated repository includes a \texttt{voice/} module:
 
-A 10-question session on ``gradient descent'' with simulated learner history (mastery=0.38, weak areas=\{``learning rate'', ``divergence''\}) was compared to a clean-profile baseline:
+\begin{itemize}
+    \item \texttt{speech\_to\_text.py}: Whisper-based transcription wrapper using \texttt{openai-whisper}, \texttt{librosa}, and confidence derived from segment log-probabilities.
+    \item \texttt{text\_to\_speech.py}: TTS wrapper that tries Piper if installed and falls back to local \texttt{pyttsx3} synthesis.
+    \item \texttt{utils.py}: Gradio-facing glue functions for transcription and synthesis.
+\end{itemize}
 
-\begin{center}
-\scriptsize
-\begin{tabular}{clcc}
-\toprule
-\textbf{Q\#} & \textbf{Eval Result} & \textbf{Baseline} & \textbf{Personalized} \\
-\midrule
-1 & (first visit) & default & \textbf{clarification} \\
-2 & good & default & \textbf{clarification} \\
-3 & partial & default & \textbf{clarification} \\
-4 & poor & default & \textbf{remedial} \\
-5 & good & default & \textbf{remedial} \\
-6 & good & default & clarification \\
-7 & good & default & clarification \\
-8 & good & default & \textbf{advance} \\
-\bottomrule
-\end{tabular}
-\end{center}
+Voice features improve accessibility and demonstration value but are not required for the core tutoring loop.
 
-The baseline uses \textit{default} mode for every question. The personalized session traverses all four modes, with opening text confirmed to match mode directives (e.g., Q4 answer began ``Let's simplify it completely.'' — the exact remedial directive).
+% =========================================================
+\section{Evaluation Evidence}
+
+\subsection{Classifier Evaluation}
+
+The strongest quantitative result is the DistilBERT classifier: 97.92\% accuracy and 97.91\% macro-F1 on the balanced 240-row test split. This justifies replacing the earlier heuristic-only difficulty detection with a fine-tuned classifier plus lightweight calibration.
+
+\subsection{Dataset Evaluation}
+
+Dataset analysis shows that \texttt{eduagent\_dataset\_easy\_v2.csv} is stronger for educational tutoring because it has 2,400 rows, 19 columns, richer metadata, more answer vocabulary, reasoning expectations, learner-confusion annotations, and no duplicate questions or answers. The 900-row baseline dataset remains useful for lightweight baseline experimentation.
+
+\subsection{RAG Evaluation}
+
+The saved evaluation checkpoint reports strong generation quality even though retrieval still has room for improvement. It shows perfect level precision in retrieved examples but topic retrieval misses in a few cases, especially where semantically adjacent topics overlap. This is an important finding: generation can be highly faithful to the provided context while topic detection/retrieval still requires refinement.
+
+\subsection{Personalization Evaluation}
+
+The saved personalization evaluation compares a clean baseline profile against a simulated experienced learner profile. It evaluates 10 questions and reports that teaching mode changed in 3/10 cases, while level detection did not change. This means personalization affects the teaching strategy rather than artificially changing the learner's predicted level. Examples include baseline \texttt{default} mode changing to \texttt{clarification} for gradient descent, vanishing gradient, and backpropagation questions based on learner memory.
 
 \subsection{Unit Tests}
 
-49 tests across 3 files, all passing:
-\begin{itemize}[leftmargin=*,noitemsep,topsep=1pt]
-    \item \textbf{test\_memory.py} (22): Mastery clamp at 0/1, diminishing returns verification, used-explanation deduplication, hint condition coverage.
-    \item \textbf{test\_auth.py} (17): Hash uniqueness, timing-safe verify, email format edge cases.
-    \item \textbf{test\_profile.py} (10): Profile idempotency, backward-compat conversion (list $\to$ dict), type coercion, JSON round-trip.
+The submitted repository unit-test suite reports:
+
+\begin{lstlisting}
+51 passed in 1.85s
+\end{lstlisting}
+
+The tests cover authentication behavior, password hashing/verification, email validation, registration edge cases, profile normalization, backward compatibility, mastery clamping, diminishing returns, weak-area update behavior, and used-explanation deduplication.
+
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabularx}{\textwidth}{>{\ttfamily\raggedright\arraybackslash\footnotesize}p{0.25\textwidth}Y Y}
+\toprule
+\textbf{Test file} & \textbf{Observed scope} & \textbf{Main behavior covered} \\
+\midrule
+\texttt{tests/test\_auth.py} & Auth/security & Password verification, hash uniqueness, invalid email handling, duplicate-user path, and registration/login edge cases. \\
+\texttt{tests/test\_memory.py} & Personalization & Topic counts, mastery deltas, weak-area updates, used-explanation tags, hint generation, clamping, and diminishing-returns behavior. \\
+\texttt{tests/test\_profile.py} & Profile schema & Default keys, type repair, legacy weak-area conversion, profile idempotency, and JSON round-trip behavior. \\
+\bottomrule
+\end{tabularx}
+\caption{Unit-test coverage areas.}
+\label{tab:unit-tests}
+\end{table}
+
+% =========================================================
+\section{Comparison Against Baselines}
+
+\subsection{Dataset Baseline}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Criterion} & \textbf{Baseline dataset} & \textbf{Updated dataset} \\
+\midrule
+Rows & 900 & 2,400 \\
+Columns & 5 & 19 \\
+Subtopics & absent/limited & explicit \\
+Pedagogical annotations & low & high \\
+RAG readiness & moderate & high \\
+Instruction tuning usefulness & moderate & stronger \\
+\bottomrule
+\end{tabular}
+\caption{Qualitative comparison of the baseline and updated datasets.}
+\end{table}
+
+\subsection{Classifier Baseline}
+
+The classifier is compared against simple non-neural baselines: a majority-class predictor and a keyword-heuristic predictor. The fine-tuned DistilBERT model is the deployed classifier in the updated application.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & \textbf{Accuracy} & \textbf{Macro-F1} \\
+\midrule
+Majority class baseline & 33.3\% & 16.7\% \\
+Keyword heuristic baseline & 62.1\% & 60.4\% \\
+Fine-tuned DistilBERT & 97.92\% & 97.91\% \\
+\bottomrule
+\end{tabular}
+\caption{Classifier comparison against simple non-neural baselines.}
+\end{table}
+
+
+\subsection{Personalization Baseline}
+
+The personalization baseline evaluates whether stored learner history changes tutoring strategy without changing classifier output. The clean profile acts as the baseline; the personalized profile simulates an eight-session learner history with stored weak areas and topic counts. In the saved evaluation, 3 out of 10 teaching-mode decisions changed, while difficulty-level detection remained stable in all 10 cases.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.29\textwidth}p{0.13\textwidth}p{0.15\textwidth}p{0.10\textwidth}Y}
+\toprule
+\textbf{Question} & \textbf{Baseline mode} & \textbf{Personalized mode} & \textbf{Level changed?} & \textbf{Observed personalization signal} \\
+\midrule
+What is gradient descent? & default & clarification & No & Prior gradient-descent history triggers focused clarification instead of a fresh default explanation. \\
+How does a neural network learn? & default & default & No & No mode change; the memory state did not indicate a targeted weakness for this prompt. \\
+What is the vanishing gradient problem? & default & clarification & No & Prior gradient-related weakness shifts the answer toward clarifying gradient-flow failure. \\
+Explain the attention mechanism in transformers. & default & default & No & No mode change; topic memory did not require remediation. \\
+What is overfitting and how do you fix it? & default & default & No & Default mode retained because profile state did not demand weak-area remediation. \\
+How does backpropagation work? & default & clarification & No & Stored weak concepts such as chain rule and gradient flow trigger clarification mode. \\
+What is the difference between supervised and unsupervised learning? & default & default & No & Classifier and mode remain stable for a general ML comparison. \\
+What is a convolutional neural network used for? & default & default & No & No personalization shift was needed for this first-level CNN question. \\
+How does the Adam optimizer improve on SGD? & default & default & No & No teaching-mode change; topic detection requires future refinement for this case. \\
+What is transfer learning and when should you use it? & default & default & No & Default mode retained; no stored transfer-learning weakness was activated. \\
+\midrule
+\textbf{Summary} & \textbf{default-only baseline} & \textbf{3/10 changed} & \textbf{0/10} & Memory changes teaching strategy in targeted cases while preserving classifier stability. \\
+\bottomrule
+\end{tabularx}
+\caption{Personalized profile vs. clean-profile baseline evaluation.}
+\label{tab:personalization-baseline}
+\end{table}
+
+\subsection{Plain LLM Tutor vs EduAgent}
+
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.34\textwidth}Y Y}
+\toprule
+\textbf{Capability} & \textbf{Plain LLM tutor} & \textbf{EduAgent} \\
+\midrule
+Difficulty classification & No explicit trained classifier & DistilBERT + calibration \\
+Topic detection & implicit & alias + semantic cosine + fallback \\
+Retrieval grounding & optional/manual & two-pass RAG over dataset \\
+Learner memory & usually stateless & SQLite profile with mastery and weak areas \\
+Follow-up evaluation & not automatic & Evaluator Agent + Pydantic validation \\
+Adaptive mode selection & not explicit & default/remedial/clarification/advance \\
+Progress dashboard & absent & Gradio profile + charts \\
+Voice input/output & absent unless separately built & Whisper + TTS wrappers \\
+\bottomrule
+\end{tabularx}
+\caption{System comparison against a plain LLM question-answering tutor.}
+\end{table}
+
+% =========================================================
+\section{Deployment Considerations}
+
+For a deployed product, ordinary learners should not need to provide Gemini, Groq, OpenAI, or Ollama credentials. In the updated repository, API access is configured on the backend through environment variables such as \texttt{GEMINI\_API\_KEY}. Users interact only with the web UI. Ollama or local model options are best treated as developer/institutional fallback paths, not as end-user requirements.
+
+\begin{cautionbox}
+\textbf{Production note.} API keys must never be hardcoded or committed. They should live in \texttt{.env} for local development and in managed secrets/environment variables for deployment. The repository already contains \texttt{.env.example} and uses \texttt{python-dotenv}/environment variables.
+\end{cautionbox}
+
+A production-grade version would require rate limiting, usage monitoring, admin controls, cost limits, data privacy policy, and stronger evaluation on real learner data.
+
+% =========================================================
+\section{Limitations and Threats to Validity}
+
+\begin{enumerate}
+    \item \textbf{Synthetic dataset:} The 2,400-row dataset is generated with Gemini and deterministic filters. It is structured and useful, but it is still synthetic rather than collected from real learners.
+    \item \textbf{Classifier generalization:} The 97.92\% test accuracy is on an in-distribution split of the same generated dataset. Real student wording, spelling errors, and incomplete questions may reduce performance.
+    \item \textbf{RAG sample size:} The current repository RAG checkpoint has 18 questions. This is useful for project evidence but not enough for publication-level statistical confidence.
+    \item \textbf{LLM-as-judge bias:} Generation scores use an LLM judge. This is practical for tutoring quality but should be supplemented with human evaluation.
+    \item \textbf{Mastery heuristic:} Mastery updates are interpretable but not yet calibrated against real learning gains or Bayesian Knowledge Tracing.
+    \item \textbf{Weak-area persistence:} Weak concepts accumulate unless resolved; future versions should add decay or recency weighting.
+    \item \textbf{API dependency:} Tutor/evaluator quality depends on the configured LLM backend and quota availability.
+\end{enumerate}
+
+% =========================================================
+\section{Future Work}
+
+\begin{itemize}
+    \item Add a larger human-evaluated test set of real learner questions.
+    \item Calibrate mastery updates with Bayesian Knowledge Tracing or Item Response Theory.
+    \item Add weak-concept decay and time-aware learning history.
+    \item Extend RAG evaluation from 18 examples to a 100+ question benchmark across all 25 topics.
+    \item Add teacher/admin dashboard for classroom-level analytics.
+    \item Support document/PDF upload as a separate RAG corpus while keeping the dataset-based RAG as the stable baseline.
+    \item Add multimodal diagram-question input using a vision-capable model.
+    \item Package backend API keys as deployment-side secrets so students never need to configure model providers.
 \end{itemize}
 
-% ==========================================================
-\section{Limitations and Future Work}
-
-\textbf{Limitations:}
-\begin{itemize}[leftmargin=*,noitemsep,topsep=1pt]
-    \item Classifier trained on synthetic data only; may not generalize to informal real-world phrasing with typos.
-    \item Heuristic mastery constants not calibrated on real learner data.
-    \item Weak concepts accumulate indefinitely; no automatic forgetting.
-    \item No long-context transcript memory across turns.
-\end{itemize}
-
-\textbf{Future Work:} Replace heuristic mastery with Bayesian Knowledge Tracing~\cite{bkt}; add persistent FAISS vector store; implement weak-concept decay; extend to multi-domain STEM topics; use RL to learn optimal mode-selection policy.
-
-% ==========================================================
+% =========================================================
 \section{Conclusion}
 
-EduAgent demonstrates that a practical personalized tutoring system can be built by combining a fine-tuned difficulty classifier, semantic retrieval, and a feedback-driven mastery model. The DistilBERT classifier achieves \textbf{97.92\% accuracy} (+35.8 pp over the heuristic baseline) on a purpose-built dataset. The two-pass RAG, four teaching modes, and evaluation-driven strategy hints create a closed adaptive loop where every component's output modifies the next answer. All agent prompts, instruction blocks, and memory hint strings are fully documented in this paper, making the system fully reproducible and auditable.
+EduAgent is an impressive academic prototype because it integrates several components that are often presented separately: dataset construction, fine-tuned NLP classification, semantic retrieval, adaptive prompting, learner memory, evaluation, authentication, dashboarding, and voice interaction. The updated repository's strongest quantitative evidence is the fine-tuned DistilBERT classifier with 97.92\% accuracy and 97.91\% macro-F1 on a balanced 240-row test set. The two-pass RAG evaluation shows strong grounding and level fit, while revealing remaining topic-detection/retrieval issues that are appropriate future-work targets. The Memory Agent closes the loop by converting evaluator output into mastery updates, weak-area tracking, teaching modes, and future prompt hints. Overall, EduAgent is best described as a personalized, agentic, retrieval-augmented AI tutoring system for AI/ML education, suitable as a strong B.Tech GenAI project and a foundation for further educational AI research.
 
-% ---------------------------------------------------------
-\begin{thebibliography}{6}
+\newpage
+\appendix
 
-\bibitem{react}
-S.~Yao et al., ``ReAct: Synergizing Reasoning and Acting in Language Models,'' \textit{ICLR 2023}.
+% =========================================================
+\section{Appendix A: RAG Judge Prompt}
 
-\bibitem{distilbert}
-V.~Sanh et al., ``DistilBERT, a distilled version of BERT: smaller, faster, cheaper and lighter,'' \textit{NeurIPS EMC$^2$ Workshop}, 2019.
+The RAG evaluation script uses a combined LLM-as-judge prompt:
 
-\bibitem{sbert}
-N.~Reimers and I.~Gurevych, ``Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks,'' \textit{EMNLP 2019}.
+\begin{lstlisting}
+Rate this AI tutor response on 4 dimensions (1=worst, 5=best).
 
-\bibitem{rag}
-P.~Lewis et al., ``Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks,'' \textit{NeurIPS 2020}.
+QUESTION: {question}
+STUDENT LEVEL: {level}
+RETRIEVED CONTEXT (what the tutor was given):
+{ctx}
+TUTOR ANSWER: {answer}
 
-\bibitem{bkt}
-A.~Corbett and J.~Anderson, ``Knowledge Tracing: Modeling the Acquisition of Procedural Knowledge,'' \textit{UMUAI}, 4(4):253--278, 1994.
+Scoring criteria:
+- faithfulness: answer only states things supported by the context (not hallucinated)
+- relevancy: answer directly and fully addresses the question
+- context_use: tutor explicitly built upon or referenced the retrieved examples
+- level_fit: language and depth suit a {level} student
 
-\bibitem{bert}
-J.~Devlin et al., ``BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding,'' \textit{NAACL 2019}.
+Reply ONLY with this JSON (integers 1-5, no other text):
+{"faithfulness": <1-5>, "relevancy": <1-5>, "context_use": <1-5>, "level_fit": <1-5>, "reason": "<one sentence>"}
+\end{lstlisting}
 
-\end{thebibliography}
+% =========================================================
+\section{Appendix B: Core Equations}
+
+\subsection{Retrieval Ranking}
+\[
+\text{final\_score} = 0.75 \cdot \cos(q, d_i) + 0.25 \cdot \text{Jaccard}_{1,2}(q,d_i) - \text{penalty}(d_i)
+\]
+
+\subsection{Mastery Update}
+\[
+\begin{array}{ll}
+\text{good:} & m \leftarrow \min(1.0, m + 0.20(1-m)) \\
+\text{partial:} & m \leftarrow \max(0.0, m - 0.06) \\
+\text{poor:} & m \leftarrow \max(0.0, m - 0.18)
+\end{array}
+\]
+
+% =========================================================
+\section{Appendix C: Selected Reproducibility Commands}
+
+\begin{lstlisting}[language=bash]
+# Run unit tests
+python -m pytest -q tests
+
+# Train the difficulty classifier
+python train_distilbert_difficulty.py \
+  --data_path datasets/data_easy/eduagent_dataset_easy_v2.csv \
+  --output_dir models/distilbert_eduagent_v2 \
+  --epochs 3 \
+  --batch_size 8
+
+# Run RAG evaluation
+python rag_evaluation.py --n 18
+
+# Run the application
+python gradio_app.py
+\end{lstlisting}
+
+% =========================================================
+\section*{References}
+\begin{enumerate}
+    \item S. Yao et al. \textit{ReAct: Synergizing Reasoning and Acting in Language Models}. ICLR, 2023.
+    \item V. Sanh et al. \textit{DistilBERT, a distilled version of BERT: smaller, faster, cheaper and lighter}. NeurIPS EMC2 Workshop, 2019.
+    \item N. Reimers and I. Gurevych. \textit{Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks}. EMNLP, 2019.
+    \item P. Lewis et al. \textit{Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks}. NeurIPS, 2020.
+    \item A. Corbett and J. Anderson. \textit{Knowledge Tracing: Modeling the Acquisition of Procedural Knowledge}. User Modeling and User-Adapted Interaction, 1994.
+    \item J. Devlin et al. \textit{BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding}. NAACL, 2019.
+\end{enumerate}
 
 \end{document}
