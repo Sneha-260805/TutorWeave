@@ -26,7 +26,8 @@ runtime/
 *.out
 *.toc
 
-# Track dataset files and graphs
-!datasets/
-!datasets/*.csv
-!datasets/*.png
+# Virtual environment
+.venv/
+
+# Datasets (large files, not needed in version control)
+datasets/
