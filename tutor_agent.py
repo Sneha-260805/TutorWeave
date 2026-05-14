@@ -47,21 +47,25 @@ Detected student level:
 Detected topic:
 {topic}
 
-Reference examples for style guidance only:
+Retrieved knowledge base examples:
 {examples_text}
 
 Instructions:
-- Answer according to the detected level.
-- For beginner: use simple words, intuition, and easy examples.
-- For intermediate: explain clearly with moderate detail and 1-2 key technical terms.
-- For advanced: give a deeper, more technical explanation.
-- Do not copy the examples directly.
-- Use the examples only to match explanation style and difficulty.
-- If the student's question is short and basic, prefer slightly simpler wording.
-- Keep the answer educational, structured, and concise.
+- Your answer MUST be grounded in the retrieved examples above.
+- Use the facts, explanations, and concepts from those examples as the 
+  foundation of your answer. Do not ignore them.
+- You may expand on them, but do not contradict or go far beyond them.
+- Adapt the explanation style and difficulty to the detected level:
+    - beginner: simple words, analogies, no jargon
+    - intermediate: moderate detail, 1-2 key terms explained
+    - advanced: technical depth, assume background knowledge
+- Structure your answer clearly and keep it educational.
+- Do not copy examples word for word — explain in your own words 
+  but stay faithful to the retrieved content.
 
-Now answer the student's question.
+Now answer the student's question based on the retrieved examples above.
 """
+
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
