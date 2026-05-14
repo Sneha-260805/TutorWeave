@@ -39,7 +39,7 @@ level, confidence = classify_difficulty("What is supervised learning?")
 ```python
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-model_id = "Sneha-260805/distilbert-eduagent-v2"
+model_id = "SSneha2005/Eduagent_distilbert"
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForSequenceClassification.from_pretrained(model_id)
 
@@ -143,7 +143,7 @@ This model is released under the same license as the EduAgent project. See the r
 
 Model weights are also published at:
 
-**[`Sneha-260805/distilbert-eduagent-v2`](https://huggingface.co/Sneha-260805/distilbert-eduagent-v2)**
+**[`SSneha2005/Eduagent_distilbert`](https://huggingface.co/SSneha2005/Eduagent_distilbert)**
 
 This allows direct loading via HuggingFace `transformers` without cloning the entire EduAgent repository.
 

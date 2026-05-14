@@ -73,6 +73,10 @@ CLASSIFIER_PATH = str(BASE_DIR / "models" / "distilbert_eduagent_v2")
 CLASSIFIER_HF_REPO = os.getenv("CLASSIFIER_HF_REPO", "SSneha2005/Eduagent_distilbert")
 ```
 
+The trained DistilBERT weights are also uploaded on Hugging Face at
+[`SSneha2005/Eduagent_distilbert`](https://huggingface.co/SSneha2005/Eduagent_distilbert).
+EduAgent uses this repository as the fallback source when local model weights are not available.
+
 The local model folder contains:
 
 ```text
@@ -799,10 +803,8 @@ The tutor is also instructed not to include bracket citations like `[1]`, `[2]`,
 | Missing `GEMINI_API_KEY` | Add `GEMINI_API_KEY=...` to `.env`; the app imports LLM features at startup |
 | Gemini quota or rate-limit errors | Wait for quota reset, reduce repeated calls, or switch `MODEL_NAME`/API key if allowed |
 | Classifier loads from Hugging Face instead of local | Confirm `models/distilbert_eduagent_v2/model.safetensors` exists and `CLASSIFIER_PATH` points to the local folder |
-
 | Semantic RAG falls back to TF-IDF | Confirm the local MiniLM cache works with the semantic embedding availability command in Validation Commands |
 | Hugging Face network checks fail for MiniLM | This is usually okay if the model is cached; `ml/embedder.py` uses `local_files_only=True` |
-
 | Whisper transcription fails | Install `ffmpeg`, reinstall `openai-whisper`, and check browser microphone permissions |
 | Text-to-speech does not play | Confirm `pyttsx3` is installed and Windows local speech support is available |
 | Invalid login credentials | Try the email address first; login supports email, username, or display name, but duplicate display names can be confusing |
