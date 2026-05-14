@@ -257,7 +257,8 @@ def retrieve_for_weak_areas(
                 result = _tfidf_retrieve(query, level, topic, top_n=top_n + 2)
             if len(result) > 0:
                 all_scored.append(result)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Weak-area retrieval failed for concept '%s': %s", concept, exc)
             continue
 
     if not all_scored:

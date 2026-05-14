@@ -882,7 +882,7 @@ def build_demo(
             fn=lambda is_logged_in: (gr.update(visible=not is_logged_in), gr.update(visible=is_logged_in)),
             inputs=[logged_in],
             outputs=[auth_section, app_section],
-        ).then(fn=lambda: ("", ""), inputs=None, outputs=[login_identifier, login_password])
+        ).then(fn=lambda logged_in: ("", "" if logged_in else gr.update()), inputs=[logged_in], outputs=[login_password, login_identifier])
 
         logout_btn.click(
             fn=handle_logout,

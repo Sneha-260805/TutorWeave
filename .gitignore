@@ -31,3 +31,6 @@ runtime/
 
 # Datasets (large files, not needed in version control)
 datasets/
+
+models/distilbert_eduagent_v2.zip
+.gradio/

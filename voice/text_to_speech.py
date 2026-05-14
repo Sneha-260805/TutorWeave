@@ -85,18 +85,19 @@ class PiperTTSEngine:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
             temp_path = temp_file.name
 
-        engine = pyttsx3.init()
-        engine.setProperty("rate", 150)
-        engine.save_to_file(text, temp_path)
-        engine.runAndWait()
-
-        with open(temp_path, "rb") as f:
-            wav_bytes = f.read()
-
+        wav_bytes = b""
         try:
-            os.remove(temp_path)
-        except OSError:
-            logger.warning(f"Could not remove temporary TTS file: {temp_path}")
+            engine = pyttsx3.init()
+            engine.setProperty("rate", 150)
+            engine.save_to_file(text, temp_path)
+            engine.runAndWait()
+            with open(temp_path, "rb") as f:
+                wav_bytes = f.read()
+        finally:
+            try:
+                os.remove(temp_path)
+            except OSError:
+                logger.warning(f"Could not remove temporary TTS file: {temp_path}")
 
         return wav_bytes
 

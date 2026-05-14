@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 try:
     from sentence_transformers import SentenceTransformer
-    embed_model = SentenceTransformer("all-MiniLM-L6-v2")
+    embed_model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
     semantic_available = True
-    logger.info("Embedder loaded: all-MiniLM-L6-v2")
+    logger.info("Embedder loaded from local cache: all-MiniLM-L6-v2")
 except Exception as _err:
     embed_model = None
     semantic_available = False

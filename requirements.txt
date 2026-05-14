@@ -7,12 +7,11 @@ torch
 sentence-transformers
 tf-keras
 gradio
-groq
+google-generativeai
 matplotlib
 seaborn
 wordcloud
 python-dotenv
-passlib
 pydantic
 openai-whisper
 librosa

@@ -3,10 +3,11 @@ import threading
 import time
 from typing import Iterable
 
-from groq import Groq
+import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted
 
 from config.settings import (
-    GROQ_API_KEY,
+    GEMINI_API_KEY,
     LLM_MAX_RETRIES,
     LLM_TIMEOUT_SECONDS,
     MODEL_NAME,
@@ -14,18 +15,19 @@ from config.settings import (
 
 logger = logging.getLogger(__name__)
 
-if not GROQ_API_KEY:
-    raise ValueError("Set GROQ_API_KEY in your environment or .env file before running LLM features.")
+if not GEMINI_API_KEY:
+    raise ValueError("Set GEMINI_API_KEY in your environment or .env file before running LLM features.")
 
-client = Groq(api_key=GROQ_API_KEY, timeout=LLM_TIMEOUT_SECONDS)
+genai.configure(api_key=GEMINI_API_KEY)
 
 # ── Quota state ───────────────────────────────────────────────────────────────
-# Shared flag so repeated 429s in one session stop multiplying token usage.
 _quota_lock = threading.Lock()
 _quota_exhausted: bool = False
 
 
 def _is_rate_limit(exc: Exception) -> bool:
+    if isinstance(exc, ResourceExhausted):
+        return True
     s = str(exc).lower()
     return "429" in s or "rate_limit" in s or "rate limit" in s or (
         "quota" in s and ("exceed" in s or "exhaust" in s)
@@ -38,7 +40,7 @@ def mark_quota_exhausted() -> None:
         if not _quota_exhausted:
             _quota_exhausted = True
             logger.error(
-                "Groq quota appears exhausted. LLM calls will fall back immediately "
+                "Gemini quota appears exhausted. LLM calls will fall back immediately "
                 "for the remainder of this session."
             )
 
@@ -67,31 +69,64 @@ def complete_chat(
     max_tokens: int | None = None,
 ) -> str:
     """
-    Call the configured Groq chat model with retry/fallback behavior.
+    Call the configured Gemini model with retry/fallback behavior.
 
-    - Detects HTTP 429 separately from other errors and uses exponential backoff.
-    - After consecutive 429s exhaust retries, marks the session quota as
-      exhausted so subsequent calls return the fallback immediately.
-    - Returns the fallback string if provided; otherwise raises RuntimeError.
+    Accepts the same OpenAI-style message list used throughout the codebase:
+      [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}]
+
+    System messages are extracted and passed as system_instruction to the model.
+    Assistant messages are mapped to the "model" role Gemini expects.
+
+    - Detects HTTP 429 / ResourceExhausted separately and uses exponential backoff.
+    - After consecutive rate-limit failures, marks quota exhausted so subsequent
+      calls return the fallback immediately without hammering the API.
+    - Returns fallback string if provided; otherwise raises RuntimeError.
     """
     if is_quota_exhausted():
         logger.warning("Quota exhausted — returning fallback immediately.")
         if fallback is not None:
             return fallback
-        raise RuntimeError("Groq quota exhausted.")
+        raise RuntimeError("Gemini quota exhausted.")
 
     message_list = list(messages)
+
+    # Separate system instruction from conversation turns
+    system_instruction = None
+    conversation = []
+    for msg in message_list:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role == "system":
+            system_instruction = content
+        else:
+            gemini_role = "model" if role == "assistant" else "user"
+            conversation.append({"role": gemini_role, "parts": [content]})
+
+    # Gemini requires at least one user turn
+    if not conversation:
+        conversation = [{"role": "user", "parts": [system_instruction or ""]}]
+        system_instruction = None
+
+    gen_config_kwargs: dict = {"temperature": temperature}
+    if max_tokens is not None:
+        gen_config_kwargs["max_output_tokens"] = max_tokens
+
     attempts = max(1, max_retries + 1)
     last_error: Exception | None = None
     consecutive_429s = 0
 
     for attempt in range(attempts):
         try:
-            kwargs = dict(model=model, messages=message_list, temperature=temperature, timeout=LLM_TIMEOUT_SECONDS)
-            if max_tokens is not None:
-                kwargs["max_tokens"] = max_tokens
-            response = client.chat.completions.create(**kwargs)
-            content = response.choices[0].message.content
+            gemini_model = genai.GenerativeModel(
+                model_name=model,
+                system_instruction=system_instruction,
+            )
+            response = gemini_model.generate_content(
+                conversation,
+                generation_config=genai.GenerationConfig(**gen_config_kwargs),
+                request_options={"timeout": int(LLM_TIMEOUT_SECONDS)},
+            )
+            content = response.text
             if content and content.strip():
                 return content.strip()
             raise ValueError("LLM response was empty.")
@@ -102,7 +137,7 @@ def complete_chat(
                 consecutive_429s += 1
                 wait = min(2 ** consecutive_429s * 2, 60)  # exponential: 4, 8, 16 … 60s
                 logger.warning(
-                    "Rate limit (429) on attempt %d/%d. Waiting %.0fs.",
+                    "Rate limit on attempt %d/%d. Waiting %.0fs.",
                     attempt + 1, attempts, wait,
                 )
                 if attempt >= attempts - 1:
@@ -112,7 +147,7 @@ def complete_chat(
             else:
                 consecutive_429s = 0
                 logger.warning(
-                    "Groq chat failed on attempt %d/%d: %s",
+                    "Gemini chat failed on attempt %d/%d: %s",
                     attempt + 1, attempts, exc,
                 )
                 if attempt < attempts - 1:
@@ -121,4 +156,4 @@ def complete_chat(
     if fallback is not None:
         return fallback
 
-    raise RuntimeError("Groq chat completion failed after retries.") from last_error
+    raise RuntimeError("Gemini chat completion failed after retries.") from last_error

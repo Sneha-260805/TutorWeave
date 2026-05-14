@@ -1,9 +1,12 @@
+import logging
 import tempfile
 from pathlib import Path
 from typing import Optional
 
 from .speech_to_text import WhisperTranscriber
 from .text_to_speech import PiperTTSEngine
+
+logger = logging.getLogger(__name__)
 
 _transcriber: WhisperTranscriber | None = None
 _tts_engine: PiperTTSEngine | None = None
@@ -14,7 +17,8 @@ def _get_transcriber() -> WhisperTranscriber | None:
     if _transcriber is None:
         try:
             _transcriber = WhisperTranscriber(model_name="base", device="cpu")
-        except Exception:
+        except Exception as exc:
+            logger.warning("Whisper transcriber failed to load: %s", exc)
             _transcriber = None
     return _transcriber
 

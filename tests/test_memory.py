@@ -101,6 +101,27 @@ class TestMasteryScoring(unittest.TestCase):
         self.assertIn("chain rule", p["weak_areas"]["backprop"])
         self.assertIn("gradient flow", p["weak_areas"]["backprop"])
 
+    def test_good_with_no_weak_concepts_clears_all(self):
+        p = ensure_profile_structure({})
+        p = update_profile_after_evaluation(
+            p, "backprop", {"understanding_level": "poor", "weak_concepts": ["chain rule", "gradient flow"]}
+        )
+        p = update_profile_after_evaluation(
+            p, "backprop", {"understanding_level": "good", "weak_concepts": []}
+        )
+        self.assertEqual(p["weak_areas"]["backprop"], [])
+
+    def test_good_with_specific_concepts_removes_only_those(self):
+        p = ensure_profile_structure({})
+        p = update_profile_after_evaluation(
+            p, "backprop", {"understanding_level": "poor", "weak_concepts": ["chain rule", "gradient flow"]}
+        )
+        p = update_profile_after_evaluation(
+            p, "backprop", {"understanding_level": "good", "weak_concepts": ["chain rule"]}
+        )
+        self.assertNotIn("chain rule", p["weak_areas"]["backprop"])
+        self.assertIn("gradient flow", p["weak_areas"]["backprop"])
+
 
 class TestUsedExplanations(unittest.TestCase):
     def test_records_explanation_tag(self):

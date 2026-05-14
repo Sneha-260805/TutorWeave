@@ -1,4 +1,4 @@
-from groq import Groq
+import google.generativeai as genai
 from example_retriever import retrieve_examples, detect_best_topic
 from ml.classifier import predict_level
 import json
@@ -7,11 +7,11 @@ import os
 # -----------------------------
 # CONFIG
 # -----------------------------
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    raise ValueError("Set GROQ_API_KEY in your environment before running this script.")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("Set GEMINI_API_KEY in your environment before running this script.")
 
-client = Groq(api_key=GROQ_API_KEY)
+genai.configure(api_key=GEMINI_API_KEY)
 
 PROFILE_FILE = "learner_profile.json"
 
@@ -86,12 +86,9 @@ Instructions:
 Now answer the student's question.
 """
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    answer = response.choices[0].message.content
+    model = genai.GenerativeModel(model_name="gemini-2.0-flash")
+    response = model.generate_content([{"role": "user", "parts": [prompt]}])
+    answer = response.text
     return level, confidence, topic, examples, answer
 
 # -----------------------------
@@ -113,12 +110,9 @@ Make it appropriate for the student's level.
 Return only the follow-up question.
 """
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    return response.choices[0].message.content.strip()
+    model = genai.GenerativeModel(model_name="gemini-2.0-flash")
+    response = model.generate_content([{"role": "user", "parts": [prompt]}])
+    return response.text.strip()
 
 # -----------------------------
 # MAIN LOOP

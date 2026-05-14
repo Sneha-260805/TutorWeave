@@ -1,518 +1,870 @@
 # EduAgent
 
-EduAgent is an adaptive AI tutor for AI/ML learning, built as a complete course project showcasing a full personalization loop. It combines fine-tuned difficulty classification, two-pass personalized RAG, semantic topic detection, a multi-mode tutor agent, Pydantic-validated evaluation, and mastery-based learner memory — all wired into a polished dark Gradio dashboard.
+EduAgent is an adaptive AI/ML tutoring application built with Gradio. It combines a fine-tuned local DistilBERT difficulty classifier, semantic topic detection, two-pass personalized RAG, learner memory, follow-up evaluation, SQLite user profiles, and voice interaction through speech-to-text and text-to-speech.
 
-The adaptive loop:
+The project is designed as a complete academic/course project: it is not just a chatbot UI. It tracks each learner, adapts explanation style based on mastery and weak areas, retrieves relevant dataset examples before answering, evaluates the learner's follow-up response, and updates the learner profile after each interaction.
 
-1. A learner asks an AI/ML question.
-2. Fine-tuned DistilBERT predicts difficulty level (97.92% test accuracy).
-3. Semantic topic detection maps the question to the closest dataset topic.
-4. Two-pass RAG retrieves grounding examples: Pass 1 (query-driven, top-3) + Pass 2 (weak-area targeted, top-2).
-5. The Memory Agent builds a personalized hint from mastery scores, weak areas, and prior explanation styles.
-6. The Tutor Agent selects a teaching mode and explains the concept adaptively.
-7. The Evaluator Agent asks a conceptual follow-up question.
-8. The learner answers; the Evaluator returns a Pydantic-validated `EvaluationResult`.
-9. The Memory Agent updates mastery (diminishing returns), weak areas, and used-explanation tags.
-10. The dashboard refreshes charts and learner insights.
-
-A full write-up of the system design, model details, and experimental results is in [`report.tex`](report.tex).
+The full written report is available in [`report.tex`](report.tex) and [`report.pdf`](report.pdf).
 
 ---
 
-## Key Features
+## What The App Does
 
-- Login, signup, logout, and authenticated learner sessions
-- Email validation and PBKDF2-SHA256 password hashing (200,000 PBKDF2 iterations, 16-byte `os.urandom` salt, `hmac.compare_digest` for timing safety)
-- Per-user learner profile persistence with SQLite (WAL journal mode)
-- **DistilBERT difficulty classifier** (`distilbert-base-uncased`, fine-tuned on 2,400 synthetic samples) — **97.92% test accuracy**, +35.8 pp over the keyword heuristic baseline
-- Keyword heuristic fallback classifier when the model directory is absent
-- **Two-tier semantic topic detection**: alias table fast path (handles abbreviations like `mlp`, `cnn`, `rag`, `lstm`) + `all-MiniLM-L6-v2` cosine similarity fallback
-- **Two-pass personalized RAG**:
-  - Pass 1 — query-driven top-3 from `(level, topic)` slice
-  - Pass 2 — weak-area targeted top-2 using composite query `"concept + topic"`, deduplicated against Pass 1
-- Per `(level, topic)` index cache — dataset encoded once, not on every query
-- **Four adaptive teaching modes**: `remedial`, `clarification`, `advance`, `default` — selected from evaluator hint (priority 1) or mastery + weak areas (priority 2)
-- `used_explanations` tracking per topic — prevents the LLM from repeating the same explanation style
-- **Diminishing-returns mastery model**: `m += 0.20 × (1 − m)` on good, `−0.06` on partial, `−0.18` on poor; initialized at 0.5, clamped to [0, 1]
-- Groq-powered Tutor Agent (`llama-3.3-70b-versatile`, temperature 0.25) for mode-specific explanations
-- Voice interaction support via `voice/` module: speech-to-text, text-to-speech, and audio-enabled learner conversation
-- Model setup helper script `setup_model.py` plus bundled DistilBERT model assets under `models/distilbert_eduagent_v2`
-- Pydantic-validated `EvaluationResult` — `understanding_level: Literal["good","partial","poor"]`
-- Shared LLM client with timeout, retry (0.75 s / 1.5 s backoff, 3 attempts), and graceful local fallback
-- Dark theme Gradio UI with tabbed learner dashboard and Matplotlib progress charts
-- System Insights / Research panel for demo and professor-facing explainability
-- **49 unit tests** across auth, memory, and profile layers (`tests/`)
-- Personalization evaluation script (`eval/run_evaluation.py`) comparing baseline vs. personalized pipeline
+1. A learner signs up or logs in.
+2. The learner asks an AI/ML question by typing or recording audio.
+3. The local DistilBERT classifier predicts the difficulty level: `beginner`, `intermediate`, or `advanced`.
+4. The topic detector maps the question to the closest AI/ML topic.
+5. The RAG retriever pulls relevant examples from the dataset.
+6. If the learner has recorded weak areas, a second RAG pass retrieves examples targeting those weak concepts.
+7. The memory agent builds a personalized hint from previous sessions, mastery, weak areas, and used explanation styles.
+8. The tutor agent asks the Gemini LLM to generate a level-aware, mode-aware answer grounded in retrieved examples.
+9. The evaluator agent generates a follow-up question.
+10. The learner answers the follow-up.
+11. The evaluator returns a structured assessment: `good`, `partial`, or `poor`.
+12. The memory agent updates mastery, weak areas, recommendations, and learner history.
+13. The dashboard refreshes charts and learner insights.
+14. The learner can listen to the tutor answer through text-to-speech.
 
 ---
 
-## Classifier Performance
+## Main Features
 
-| Method | Test Accuracy |
-|--------|--------------|
-| Keyword heuristic (baseline) | 62.1% |
-| Fine-tuned DistilBERT (ours) | **97.92%** |
-
-Training set: 1,920 samples · Validation: 240 · Test: 240  
-Dataset: 2,400 balanced synthetic AI/ML Q&A pairs (800 per level)
+- Login, signup, logout, and authenticated learner sessions.
+- SQLite-backed user and profile storage.
+- PBKDF2-SHA256 password hashing through `passlib`.
+- Local fine-tuned DistilBERT classifier stored in `models/distilbert_eduagent_v2`.
+- Hugging Face classifier fallback through `CLASSIFIER_HF_REPO`.
+- Classifier calibration for short comparison questions, so ordinary comparisons like "compare Adam and RMSProp" are treated as `intermediate` while deeper mathematical comparisons stay `advanced`.
+- Semantic topic detection with alias matching and locally cached MiniLM embeddings, plus TF-IDF fallback.
+- Two-pass personalized RAG:
+  - Pass 1: retrieve examples similar to the learner question.
+  - Pass 2: retrieve examples targeting learner weak areas.
+- Adaptive teaching modes:
+  - `default`
+  - `remedial`
+  - `clarification`
+  - `advance`
+- Learner memory with sessions, topic history, mastery, weak areas, used explanation styles, and last evaluation.
+- Gemini-powered tutor and evaluator agents.
+- Student-friendly bullet-point tutor answers with bracket citation markers disabled.
+- Structured evaluation with Pydantic validation.
+- Voice input using Whisper through `openai-whisper`.
+- Voice output using local text-to-speech through `pyttsx3` fallback and the `voice/` module.
+- Gradio dashboard with profile summaries, retrieved examples, system insights, and progress charts.
+- Unit tests for auth, memory, and profile behavior.
+- RAG evaluation scripts and saved evaluation outputs.
 
 ---
 
-## Architecture
+## Current Important Project Choices
+
+### Primary Classifier Model
+
+The main classifier model is the local DistilBERT model:
 
 ```text
-EduAgent/
-  gradio_app.py
-  report.tex                        ← conference-style research paper
-  app/
-    main.py
-    ui.py
-  agents/
-    llm_client.py
-    tutor_agent.py
-    evaluator_agent.py
-    memory_agent.py
-  ml/
-    classifier.py
-    embedder.py                     ← shared all-MiniLM-L6-v2 singleton
-    topic_detector.py
-    retriever.py
-  auth/
-    auth_service.py
-    password_utils.py
-  db/
-    sqlite_store.py
-    profile_repository.py
-  config/
-    settings.py
-  models/
-    distilbert_eduagent_v2/         ← fine-tuned DistilBERT classifier
-  setup_model.py                    ← helper script to bootstrap model assets and tokenizer
-  voice/                            ← speech-to-text / text-to-speech voice interface support
-  datasets/
-    eduagent_dataset.csv
-    eduagent_training_ready.csv
-  eval/
-    run_evaluation.py               ← baseline vs. personalized comparison
-    evaluation_results.md           ← generated report
-  tests/
-    test_auth.py
-    test_memory.py
-    test_profile.py
-  runtime/
-    eduagent_app.db                 ← SQLite database (WAL mode)
-  requirements.txt
+models\distilbert_eduagent_v2
 ```
 
-For a detailed agent flow, design decisions, ablation results, and limitations see [`report.tex`](report.tex).
+The active setting is in [`config/settings.py`](config/settings.py):
 
----
-
-## File Responsibilities
-
-### `gradio_app.py`
-
-Imports `create_app()` from `app/main.py` and launches Gradio with custom CSS.
-
-### `app/ui.py`
-
-UI layout layer — dark CSS, login/signup page, two-column chat workspace, and all dashboard tab components. No backend logic.
-
-### `app/main.py`
-
-Orchestration and Gradio callback layer.
-
-- Initializes the database
-- Handles signup, login, logout
-- Handles main learner questions — calls Tutor Agent, records used explanation, updates profile
-- Calls Evaluator Agent on follow-up answers
-- Formats profile display, evaluation display, charts, and System Insights
-- Wires backend outputs into UI components via `_pack()` — validated at runtime, mismatches raise `ValueError` immediately
-
-### `agents/llm_client.py`
-
-Shared LLM client. Groq chat completions with `LLM_TIMEOUT_SECONDS=8.0`, `LLM_MAX_RETRIES=2` (3 total attempts), backoff at 0.75 s and 1.5 s, and a fallback string on persistent failure.
-
-### `agents/tutor_agent.py`
-
-The Tutor Agent.
-
-- Classifies question level, detects topic, runs two-pass RAG
-- Reads memory hint and evaluator strategy hint from the learner profile
-- Selects teaching mode (`remedial` / `clarification` / `advance` / `default`)
-- Assembles LLM prompt with mode-specific instruction block (temperature 0.25)
-- Returns `(level, confidence, topic, examples_df, weak_examples_df, answer, teaching_mode)`
-
-**Teaching modes:**
-
-| Mode | When triggered | Behaviour |
-|------|----------------|-----------|
-| `remedial` | Poor mastery (< 0.35) or evaluator recommends revisit | Simpler language, concrete real-world analogy, one key concept |
-| `clarification` | Partial mastery or evaluator detects confusion | Addresses known weak concepts directly, builds on what is known |
-| `advance` | High mastery (≥ 0.75) and no weak areas | Advanced edge cases, nuances, connections to related topics |
-| `default` | All other cases | Balanced level-appropriate explanation |
-
-### `agents/evaluator_agent.py`
-
-The Evaluator Agent.
-
-- Generates one follow-up question (temperature 0.2)
-- Evaluates learner response with Pydantic-validated `EvaluationResult` (temperature 0.0)
-- `_extract_json_object()` strips markdown fences and uses a `\{.*\}` DOTALL regex fallback
-- Safe fallback on parse failure: `understanding_level="partial"` (not `"poor"`) to avoid incorrectly triggering remedial mode
-
-### `agents/memory_agent.py`
-
-The Memory Agent. Owns the learner profile schema and all mutations.
-
-- `ensure_profile_structure` normalizes profile shape on load
-- Mastery update with **diminishing returns**: `m += 0.20 × (1 − m)` on good; `m -= 0.06` on partial; `m -= 0.18` on poor; clamped to [0, 1]; initialized at 0.5
-- `record_used_explanation(topic, f"{level}-{mode}")` tags explanation style per topic
-- `build_memory_hint()` — up to 5 conditional sentences surfacing mastery, weak areas, used styles, topic history
-- `build_evaluation_strategy_hint()` — maps last `EvaluationResult` to a mode string + action addendum for the tutor
-
-### `ml/embedder.py`
-
-Shared singleton loader for `all-MiniLM-L6-v2`. Loaded once at import time; `semantic_available` flag used by both retriever and topic detector to choose backend.
-
-### `ml/classifier.py`
-
-- Loads fine-tuned DistilBERT from `models/distilbert_eduagent_v2/`
-- Falls back to keyword heuristic if model directory is absent (62.1% accuracy vs. 97.92% for DistilBERT)
-- Beginner-intent calibration applies only to questions of ≤ 8 words
-- **HuggingFace Hub**: Model also published at [`SSneha2005/Eduagent_distilbert`](https://huggingface.co/SSneha2005/Eduagent_distilbert) for direct loading via `transformers`
-
-### `ml/topic_detector.py`
-
-Two-tier topic detection:
-
-1. **Alias table** — space-padded exact substring match against 14 canonical topics and their abbreviations/synonyms (e.g. `mlp`, `ann`, `rag`, `lstm`, `sgd`). Authoritative — skips embedding step when matched.
-2. **Semantic similarity** — `all-MiniLM-L6-v2` encodes `"{topic}: {all questions for topic}"` per topic per level, cached per dataset snapshot. Cosine similarity ranks best match.
-3. TF-IDF fallback (ngram 1–2) if `sentence-transformers` is unavailable.
-
-### `ml/retriever.py`
-
-Two-pass personalized RAG:
-
-- **Pass 1** — query-driven top-`RAG_TOP_N` (default 3) from `(level, topic)` slice
-- **Pass 2** — weak-area targeted top-`RAG_WEAK_TOP_N` (default 2) via composite query `"concept topic"`, pooled across weak concepts, deduplicated against Pass 1
-- Answer length bounds filter per level; complexity penalty (+0.15 per hard term, +0.15 if > 18 words) discourages mismatched examples
-- `(len(df), level, topic)` cache key — index built once per dataset/level/topic combination
-
-### `auth/auth_service.py`
-
-Signup with email format validation and password length check. Login by email or username.
-
-### `auth/password_utils.py`
-
-PBKDF2-SHA256 via `passlib`. `hmac.compare_digest` for timing-safe verification.
-
-### `db/sqlite_store.py`
-
-Opens SQLite connections with `PRAGMA journal_mode=WAL` and `PRAGMA synchronous=NORMAL`. Initializes `users` and `profiles` tables.
-
-### `db/profile_repository.py`
-
-Creates, loads, and saves per-user learner profiles as JSON blobs. `INSERT OR IGNORE` with rollback guard on profile creation.
-
-### `eval/run_evaluation.py`
-
-Runs 10 representative questions through the pipeline twice each — blank profile (baseline) vs. simulated 8-session profile (personalized). Captures level, confidence, topic, teaching mode, and 55-word answer excerpt per run. Writes `eval/evaluation_results.md`.
-
-```powershell
-python -m eval.run_evaluation
+```python
+CLASSIFIER_PATH = str(BASE_DIR / "models" / "distilbert_eduagent_v2")
+CLASSIFIER_HF_REPO = os.getenv("CLASSIFIER_HF_REPO", "SSneha2005/Eduagent_distilbert")
 ```
 
-### `tests/`
-
-**49 unit tests** across three files:
-
-| File | What it tests |
-|------|--------------|
-| `test_profile.py` | `ensure_profile_structure` — defaults, idempotency, type coercion, round-trips |
-| `test_memory.py` | Mastery scoring, diminishing returns, `used_explanations`, memory hints |
-| `test_auth.py` | Password hashing, email validation, `register_user` (mocked DB) |
-
-```powershell
-python -m pytest tests/ -v
-```
-
----
-
-## Learner Profile Schema
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `sessions` | int | Login count |
-| `questions_asked` | int | Total questions across all sessions |
-| `last_level` | str | Most recently detected level |
-| `level_history` | list | Per-question level sequence |
-| `topics_seen` | list | Ordered first-seen topic list |
-| `topic_counts` | dict | Questions asked per topic |
-| `mastery` | dict | 0.0–1.0 score per topic (initialized 0.5) |
-| `weak_areas` | dict | Concept-level gaps per topic from evaluator |
-| `used_explanations` | dict | `level-mode` tags used per topic |
-| `recommended_next_topics` | list | Evaluator-suggested next topics |
-| `last_evaluation` | dict | Most recent `EvaluationResult` |
-
----
-
-## End-to-End Runtime Flow
-
-### 1. Authentication
-
-Signup (email validated, password hashed with PBKDF2-SHA256) or login. Learner profile loaded or created in SQLite.
-
-### 2. Classification
-
-Fine-tuned DistilBERT predicts `beginner` / `intermediate` / `advanced` with confidence scores (97.92% test accuracy). Keyword heuristic fires automatically if model is absent.
-
-### 3. Semantic Topic Detection
-
-Alias table check (fast path) → semantic cosine similarity over per-level topic index (all-MiniLM-L6-v2) → TF-IDF fallback.
-
-### 4. Two-Pass RAG
-
-Pass 1 retrieves top-3 query-similar examples from the `(level, topic)` slice. Pass 2 retrieves top-2 examples targeting recorded weak concepts, deduplicated against Pass 1.
-
-### 5. Memory Read
-
-Memory Agent builds personalized hint: mastery score, weak concepts, previously used explanation styles for the detected topic.
-
-### 6. Teaching Mode Selection
-
-`infer_teaching_mode()` maps evaluator hint (priority 1) or mastery + weak areas (priority 2) to `remedial` / `clarification` / `advance` / `default`.
-
-### 7. Tutoring
-
-Tutor Agent assembles LLM prompt with mode-specific instruction block. Calls Groq (`llama-3.3-70b-versatile`, temperature 0.25). Local template fallback on timeout.
-
-### 8. Explanation Tag Recorded
-
-`record_used_explanation(topic, f"{level}-{teaching_mode}")` ensures the same style is not repeated on the next visit.
-
-### 9. Follow-up and Evaluation
-
-Evaluator Agent generates a follow-up question (temperature 0.2), then evaluates the learner's answer (temperature 0.0) and returns a Pydantic-validated `EvaluationResult`.
-
-### 10. Memory Update
-
-Mastery updated (diminishing returns), weak concepts recorded, profile saved to SQLite.
-
-### 11. Dashboard Update
-
-UI refreshes: learner snapshot, memory summary, evaluation result, Mastery by Topic chart, Topic Revisit Count chart, Weak Concept Count chart, System Insights.
-
----
-
-## Dataset Requirements
-
-`datasets/eduagent_dataset.csv` with columns:
-
-```text
-question, answer, level, topic
-```
-
-Training dataset (`eduagent_training_ready.csv`): 2,400 balanced synthetic AI/ML Q&A pairs (800 per level — beginner, intermediate, advanced) across 14 topics.
-
----
-
-## Model Requirements
-
-Fine-tuned DistilBERT classifier at:
+The local model folder contains:
 
 ```text
 models/distilbert_eduagent_v2/
   config.json
   model.safetensors
+  tokenizer.json
   tokenizer_config.json
   special_tokens_map.json
   vocab.txt
-  README.md                             ← model card with training details
+  label_map.json
+  training_config.json
+  README.md
+  reports/
+  splits/
+  checkpoint-240/
+  checkpoint-480/
+  checkpoint-720/
 ```
 
-The model weights are also published on the HuggingFace Hub for direct loading without cloning the repository:
+At startup, [`ml/classifier.py`](ml/classifier.py) first checks for local weights at `CLASSIFIER_PATH`. If `model.safetensors` or `pytorch_model.bin` exists, it loads the local model. If local loading fails, it tries the Hugging Face repo in `CLASSIFIER_HF_REPO`. If both fail, it falls back to heuristics.
+
+The classifier also applies a small calibration layer after the DistilBERT prediction:
+
+- Very simple definition questions remain `beginner`.
+- Ordinary comparison questions such as `compare Adam optimizer and RMSProp` are treated as `intermediate`.
+- Comparison questions with deeper markers such as `derive`, `convergence`, `bias correction`, `mathematically`, or `loss landscape` are treated as `advanced`.
+- Explicit advanced wording such as `derive`, `prove`, `architecture`, `convergence`, or `backpropagation` can override the raw model label.
+
+Example classifications:
+
+```text
+What is gradient descent? -> beginner
+Compare RMSProp and Adam -> intermediate
+Compare Adam and RMSProp in terms of convergence -> advanced
+Derive the Adam update rule and compare it with RMSProp -> advanced
+```
+
+### Main Dataset
+
+The active RAG dataset is configured in [`config/settings.py`](config/settings.py):
 
 ```python
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-
-model_id = "Sneha-260805/distilbert-eduagent-v2"
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForSequenceClassification.from_pretrained(model_id)
+DATASET_FILE = str(BASE_DIR / "datasets" / "data_easy" / "eduagent_dataset_easy_v2.csv")
 ```
 
-**Hub link**: [`Sneha-260805/distilbert-eduagent-v2`](https://huggingface.co/Sneha-260805/distilbert-eduagent-v2)
+The dataset should contain at least:
 
-For training details, performance metrics, and usage examples, see [`models/distilbert_eduagent_v2/README.md`](models/distilbert_eduagent_v2/README.md).
+```text
+question, answer, level, topic
+```
 
-If the model directory is absent, the keyword heuristic activates automatically (functional but lower accuracy: 62.1% vs. 97.92%).
+Some generated datasets may also include extra metadata columns such as `subtopic`, `question_angle`, `key_concepts`, or generation metadata.
+
+### User Data
+
+User data is stored in SQLite:
+
+```text
+runtime\eduagent_app.db
+```
+
+The database file can be overridden with:
+
+```text
+EDUAGENT_DB_FILE=path\to\custom.db
+```
+
+Important tables:
+
+```text
+users
+profiles
+```
+
+The `users` table stores authentication data. The `profiles` table stores learner memory as JSON strings.
+
+---
+
+## Project Structure
+
+```text
+EduAgent/
+  gradio_app.py
+  README.md
+  ARCHITECTURE.md
+  report.tex
+  report.pdf
+  requirements.txt
+  .env.example
+
+  app/
+    main.py                 # Gradio callbacks, orchestration, auth flow, question/evaluation flow
+    ui.py                   # Gradio UI layout, dashboard, voice controls, CSS
+
+  agents/
+    llm_client.py           # Gemini client, retries, quota handling, fallback behavior
+    tutor_agent.py          # classification + topic detection + RAG + prompt assembly
+    evaluator_agent.py      # follow-up question generation and response evaluation
+    memory_agent.py         # learner profile schema and profile update logic
+
+  ml/
+    classifier.py           # local DistilBERT loading and fallback heuristics
+    embedder.py             # shared local-cache all-MiniLM-L6-v2 embedder
+    topic_detector.py       # alias matching, semantic topic detection, TF-IDF fallback
+    retriever.py            # two-pass RAG retrieval
+    prompts.py
+
+  voice/
+    __init__.py
+    speech_to_text.py       # Whisper speech-to-text wrapper
+    text_to_speech.py       # TTS engine wrapper
+    utils.py                # Gradio-facing voice helpers
+
+  auth/
+    auth_service.py         # signup/login validation
+    password_utils.py       # password hashing and verification
+
+  db/
+    sqlite_store.py         # SQLite connection and table initialization
+    profile_repository.py   # users and learner profiles
+
+  config/
+    settings.py             # dataset, model, DB, LLM, and RAG settings
+
+  datasets/
+    data_easy/
+      eduagent_dataset_easy_v2.csv
+    eduagent_dataset.csv
+    eduagent_training_ready.csv
+
+  models/
+    distilbert_eduagent_v2/ # primary local classifier model
+
+  eval/
+    run_evaluation.py
+    evaluation_results.md
+    rag_eval_report.md
+    rag_eval_results.*
+
+  tests/
+    test_auth.py
+    test_memory.py
+    test_profile.py
+
+  runtime/
+    eduagent_app.db         # active SQLite app database
+```
+
+---
+
+## Core Components
+
+### `gradio_app.py`
+
+Launches the Gradio app:
+
+```python
+demo = create_app()
+demo.launch(theme=gr.themes.Soft(), css=CUSTOM_CSS, share=True)
+```
+
+If you do not want a public Gradio share link, remove `share=True`.
+
+### `app/main.py`
+
+This is the main application orchestration layer. It:
+
+- Initializes the SQLite database.
+- Handles signup, login, logout.
+- Loads and saves learner profiles.
+- Handles learner questions.
+- Calls the tutor agent.
+- Stores used explanation modes.
+- Generates follow-up questions.
+- Evaluates follow-up replies.
+- Updates learner memory.
+- Builds profile markdown, evaluation cards, dashboard charts, and system insights.
+- Connects voice handlers to UI callbacks:
+  - `transcribe_question_handler`
+  - `read_answer_handler`
+
+### `app/ui.py`
+
+Defines the Gradio interface and custom CSS. It includes:
+
+- Login/signup screen.
+- Main chat workspace.
+- Voice recording input through `gr.Audio`.
+- Answer audio output through `gr.Audio`.
+- Learner dashboard.
+- Retrieved examples panel.
+- Evaluation panel.
+- System insights panel.
+- Matplotlib chart outputs.
+
+### `agents/tutor_agent.py`
+
+This file owns the main answer-generation pipeline:
+
+1. Predict difficulty with `predict_level`.
+2. Detect the topic with `detect_best_topic`.
+3. Retrieve examples with `retrieve_examples`.
+4. Retrieve weak-area examples with `retrieve_for_weak_areas`.
+5. Build memory and evaluation strategy hints.
+6. Select the teaching mode.
+7. Build the final tutor prompt.
+8. Call the Gemini model through `complete_chat`.
+9. Return answer metadata to the UI.
+
+The tutor prompt now asks the LLM to answer in a student-friendly bullet format:
+
+- 3 to 5 short bullets.
+- The first bullet gives the direct answer.
+- Each bullet is 1 or 2 short sentences.
+- A final `Next step:` bullet is added only when useful.
+- Bracket citation markers like `[1]`, `[2]`, and `[3]` are explicitly disabled.
+
+Returned tuple:
+
+```python
+(level, confidence, topic, examples, weak_examples, answer, teaching_mode)
+```
+
+### `agents/evaluator_agent.py`
+
+Generates a follow-up question and evaluates the learner's reply. Evaluation is validated through a Pydantic model:
+
+```python
+understanding_level: "good" | "partial" | "poor"
+weak_concepts: list[str]
+feedback: str
+recommended_action: "advance" | "re-explain" | "give easier example" | "give more practice"
+```
+
+If the LLM returns invalid JSON, the evaluator safely falls back to a `partial` evaluation.
+
+### `agents/memory_agent.py`
+
+Defines and updates the learner profile. It tracks:
+
+- Sessions
+- Total questions asked
+- Last predicted level
+- Level history
+- Topics seen
+- Topic counts
+- Mastery scores
+- Weak areas
+- Used explanation styles
+- Recommended next topics
+- Last evaluation
+
+Mastery is updated with diminishing returns:
+
+```text
+good    -> m += 0.20 * (1 - m)
+partial -> m -= 0.06
+poor    -> m -= 0.18
+```
+
+Scores are clamped between `0.0` and `1.0`.
+
+### `ml/classifier.py`
+
+Loads the local DistilBERT classifier from:
+
+```text
+models\distilbert_eduagent_v2
+```
+
+The classifier predicts:
+
+```text
+beginner
+intermediate
+advanced
+```
+
+The classifier is combined with heuristic calibration for edge cases:
+
+- Short definition-style questions are kept at `beginner`.
+- Plain comparison questions are promoted to `intermediate`, even if the model predicts `beginner`.
+- Advanced comparison questions are marked `advanced` when they include deeper terms such as `derive`, `convergence`, `bias correction`, `loss landscape`, or `mathematically`.
+- Explicit advanced-intent terms can override the raw model label.
+
+This prevents cases like `compare Adam optimizer and rms prop` from being incorrectly shown as `advanced` just because the word `optimizer` contains `optimize`.
+
+### `ml/topic_detector.py`
+
+Detects the most relevant topic for the learner question. It uses:
+
+- Alias matching for common topic names and abbreviations.
+- Semantic similarity through `sentence-transformers`.
+- TF-IDF fallback when embeddings are unavailable.
+
+### `ml/embedder.py`
+
+Loads the shared semantic embedding model:
+
+```python
+SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
+```
+
+The app now prefers the locally cached MiniLM model to avoid failing on Hugging Face network checks. When the local cache is present, semantic RAG is active with 384-dimensional embeddings. If the cache is missing or loading fails, retrieval falls back to TF-IDF.
+
+### `ml/retriever.py`
+
+Implements the RAG layer.
+
+Pass 1 retrieves examples similar to the user question:
+
+```python
+retrieve_examples(user_question, level, top_n=RAG_TOP_N)
+```
+
+Pass 2 retrieves examples that target weak concepts:
+
+```python
+retrieve_for_weak_areas(
+    weak_concepts,
+    topic,
+    level,
+    top_n=RAG_WEAK_TOP_N,
+    exclude_questions=already_retrieved,
+)
+```
+
+Retrieval uses locally cached `all-MiniLM-L6-v2` embeddings when available and TF-IDF otherwise.
+
+### `voice/`
+
+The voice module provides:
+
+- Speech-to-text using Whisper.
+- Text-to-speech using a TTS engine wrapper.
+- Utility functions used by Gradio callbacks.
+
+Important files:
+
+```text
+voice/speech_to_text.py
+voice/text_to_speech.py
+voice/utils.py
+```
+
+The UI uses:
+
+```python
+gr.Audio(sources=["microphone"], ...)
+```
+
+When the learner stops recording, the audio is transcribed into the normal question textbox. When the learner clicks the read/listen control, the latest answer is synthesized to a `.wav` file and played in the UI.
+
+---
+
+## Setup On Windows PowerShell
+
+From the project root:
+
+```powershell
+cd C:\Users\sneha\OneDrive\Desktop\Eduagent
+```
+
+Create or recreate the virtual environment:
+
+```powershell
+python -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```powershell
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+If the existing `.venv` is broken or missing activation files, recreate it:
+
+```powershell
+Rename-Item .venv .venv_old
+python -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
 
 ---
 
 ## Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root. The project already includes `.env.example`.
+
+Minimum required variable:
 
 ```text
-GROQ_API_KEY=your_groq_api_key_here
-MODEL_NAME=llama-3.3-70b-versatile
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+Recommended variables:
+
+```text
+GEMINI_API_KEY=your_gemini_api_key_here
+MODEL_NAME=gemini-2.0-flash
 LLM_TIMEOUT_SECONDS=8
 LLM_MAX_RETRIES=2
 RAG_TOP_N=3
 RAG_WEAK_TOP_N=2
+CLASSIFIER_HF_REPO=SSneha2005/Eduagent_distilbert
+EVAL_MODEL=gemini-2.0-flash
 ```
 
-Only `GROQ_API_KEY` is required.
+Optional database override:
 
-```powershell
-$env:GROQ_API_KEY="your_groq_api_key_here"
+```text
+EDUAGENT_DB_FILE=runtime\eduagent_app.db
 ```
+
+The app currently raises an error if `GEMINI_API_KEY` is missing because LLM features are imported at startup.
 
 ---
 
-## Setup
+## Why Gemini 2.0 Flash?
 
-### 1. Clone
+EduAgent uses `gemini-2.0-flash` because the application is an interactive tutor, so response speed and cost efficiency matter. A learner may ask many questions in one session, answer follow-up questions, and repeatedly refresh personalized feedback. A fast model keeps this loop usable in a live Gradio demo.
+
+The LLM is not working alone. Before the answer is generated, EduAgent already supplies structured context:
+
+- DistilBERT predicts the learner difficulty level.
+- Topic detection identifies the relevant AI/ML concept.
+- Two-pass RAG retrieves grounding examples from the dataset.
+- Learner memory provides mastery, weak areas, and prior explanation styles.
+- The tutor prompt constrains answer format, teaching mode, and grounding behavior.
+
+Because of this pipeline, the LLM mainly needs to turn retrieved and personalized context into a clear educational explanation. `gemini-2.0-flash` gives a practical balance of speed, quality, availability, and cost for repeated student interactions.
+
+A larger model could be useful for very advanced reasoning questions, but it would increase latency and cost. A future improvement would be model routing: use `gemini-2.0-flash` for most questions and route only advanced, low-confidence, or highly mathematical questions to a stronger model.
+
+---
+
+## Run The App
+
+Activate the virtual environment:
 
 ```powershell
-git clone https://github.com/Sneha-260805/EduAgent.git
-cd EduAgent
-```
-
-### 2. Create Virtual Environment
-
-```powershell
-python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-### 3. Install Dependencies
-
-```powershell
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-Key dependencies: `transformers`, `torch`, `sentence-transformers`, `gradio`, `groq`, `pandas`, `numpy`, `scikit-learn`, `matplotlib`, `python-dotenv`, `passlib`, `pydantic`.
-
-### 4. Configure Environment
-
-Add `GROQ_API_KEY` to `.env` (see above).
-
-### 5. Run
+Launch Gradio:
 
 ```powershell
 python .\gradio_app.py
 ```
 
-Open `http://127.0.0.1:7860` in your browser.
+Open:
+
+```text
+http://127.0.0.1:7860
+```
+
+Because `gradio_app.py` currently uses `share=True`, Gradio may also print a temporary public share URL.
 
 ---
 
-## Validation
+## How To Use The App
 
-Build check:
+1. Start the app.
+2. Sign up with name, optional username, email, and password.
+3. Log in.
+4. Ask an AI/ML question in the chat box.
+5. Optionally record a voice question; the recording will be transcribed into the question input.
+6. Submit the question.
+7. Review:
+   - Tutor answer
+   - Predicted difficulty level
+   - Confidence scores
+   - Detected topic
+   - Retrieved examples
+   - System insights
+8. Answer the follow-up question in the evaluation section.
+9. Check the updated profile dashboard and charts.
+10. Use answer audio to listen to the tutor response.
+
+---
+
+## Voice Requirements
+
+Voice input uses `openai-whisper`. Whisper commonly needs `ffmpeg` available on your system PATH.
+
+Install Python voice dependencies through:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+If transcription fails, check:
+
+- `openai-whisper` installed correctly.
+- `ffmpeg` is installed and available in PATH.
+- The browser has microphone permission.
+- The Gradio app is running in a browser tab that can access the microphone.
+
+Text-to-speech uses `pyttsx3` fallback behavior. On Windows, TTS depends on local speech support installed with the OS.
+
+---
+
+## View User Data
+
+The active SQLite database is:
+
+```text
+runtime\eduagent_app.db
+```
+
+Open it with DB Browser for SQLite, or inspect it with Python.
+
+View users without printing password hashes:
+
+```powershell
+.\.venv\Scripts\python.exe -c "import sqlite3; conn=sqlite3.connect('runtime/eduagent_app.db'); conn.row_factory=sqlite3.Row; rows=conn.execute('SELECT id, username, name, email, created_at FROM users ORDER BY id').fetchall(); [print(dict(r)) for r in rows]; conn.close()"
+```
+
+View learner profile summaries:
+
+```powershell
+.\.venv\Scripts\python.exe -c "import sqlite3; conn=sqlite3.connect('runtime/eduagent_app.db'); conn.row_factory=sqlite3.Row; rows=conn.execute('SELECT user_id, sessions, questions_asked, last_level, topics_seen, mastery, weak_areas FROM profiles ORDER BY user_id').fetchall(); [print(dict(r)) for r in rows]; conn.close()"
+```
+
+Do not expose `password_hash` values in screenshots or reports.
+
+---
+
+## Validation Commands
+
+Quick classifier source check:
+
+```powershell
+.\.venv\Scripts\python.exe -c "from config.settings import CLASSIFIER_PATH; import ml.classifier as c; print(CLASSIFIER_PATH); print(c._classifier_source)"
+```
+
+Expected source:
+
+```text
+local (...\models\distilbert_eduagent_v2)
+```
+
+Check classifier calibration:
+
+```powershell
+.\.venv\Scripts\python.exe -B -c "from ml.classifier import predict_level; qs=['What is gradient descent?','Compare RMSProp and Adam','compare Adam optimizer and rms prop','Compare Adam and RMSProp in terms of convergence']; [print(q, '->', predict_level(q)[0]) for q in qs]"
+```
+
+Expected labels:
+
+```text
+What is gradient descent? -> beginner
+Compare RMSProp and Adam -> intermediate
+compare Adam optimizer and rms prop -> intermediate
+Compare Adam and RMSProp in terms of convergence -> advanced
+```
+
+Check semantic embedding availability:
+
+```powershell
+.\.venv\Scripts\python.exe -B -c "from ml.embedder import semantic_available, embed_model; print(semantic_available); print(embed_model.get_sentence_embedding_dimension() if embed_model else None)"
+```
+
+Expected output when semantic RAG is active:
+
+```text
+True
+384
+```
+
+Build/import check:
 
 ```powershell
 python -c "from app.main import create_app; app = create_app(); print('ok')"
 ```
 
-Unit tests (49 tests):
+Run unit tests with `unittest`:
 
 ```powershell
-python -m pytest tests/ -v
+python -m unittest discover tests
 ```
 
-Personalization evaluation (requires `GROQ_API_KEY`):
+Run unit tests with `pytest`:
+
+```powershell
+python -m pip install pytest
+python -m pytest tests -v
+```
+
+Run personalization evaluation:
 
 ```powershell
 python -m eval.run_evaluation
 ```
 
-Generates `eval/evaluation_results.md` — side-by-side comparison of blank-profile vs. personalized tutor behavior across 10 questions.
+Run RAG evaluation:
+
+```powershell
+python .\rag_evaluation.py
+```
+
+---
+
+## Important Runtime Files
+
+```text
+runtime/eduagent_app.db
+```
+
+Main SQLite database.
+
+```text
+eval/evaluation_results.md
+```
+
+Generated personalization evaluation report.
+
+```text
+eval/rag_eval_report.md
+```
+
+Generated RAG evaluation report.
+
+```text
+models/distilbert_eduagent_v2/model.safetensors
+```
+
+Primary local DistilBERT classifier weights.
+
+---
+
+## Configuration Reference
+
+Main settings live in [`config/settings.py`](config/settings.py).
+
+| Setting | Purpose |
+|---|---|
+| `GEMINI_API_KEY` | Required API key for Gemini LLM calls |
+| `MODEL_NAME` | Tutor model, default `gemini-2.0-flash` |
+| `DATASET_FILE` | Active RAG dataset path |
+| `CLASSIFIER_PATH` | Primary local DistilBERT model path |
+| `CLASSIFIER_HF_REPO` | Hugging Face fallback classifier repo |
+| `DB_FILE` | SQLite database path |
+| `LLM_TIMEOUT_SECONDS` | LLM request timeout |
+| `LLM_MAX_RETRIES` | Retry count after failed LLM calls |
+| `RAG_TOP_N` | Number of normal retrieved examples |
+| `RAG_WEAK_TOP_N` | Number of weak-area retrieved examples |
+| `EVAL_MODEL` | Evaluation model setting, default `gemini-2.0-flash` |
+| `N_EVAL_SAMPLES` | Number of RAG evaluation samples |
+
+---
+
+## RAG Details
+
+EduAgent uses retrieval-augmented generation rather than sending the learner question directly to the LLM.
+
+The retrieval source is the configured CSV dataset. Each row contains an educational question/answer pair with difficulty and topic metadata.
+
+Semantic retrieval uses the locally cached `sentence-transformers/all-MiniLM-L6-v2` model through `SentenceTransformer(..., local_files_only=True)`. This avoids runtime failures caused by blocked or unavailable Hugging Face network checks. If the local MiniLM cache is not available, the app automatically uses TF-IDF retrieval.
+
+The first retrieval pass uses the learner's question and predicted difficulty level to find relevant examples. The second retrieval pass uses weak concepts stored in the learner profile, such as `"chain rule"` or `"learning rate scheduling"`, to retrieve additional examples that address known gaps.
+
+The tutor prompt includes:
+
+- Learner question
+- Predicted level
+- Detected topic
+- Learner memory hint
+- Recent evaluator strategy hint
+- Retrieved examples
+- Weak-area retrieved examples
+- Mode-specific tutoring instructions
+
+The LLM is instructed to use retrieved examples as supporting context without copying them directly.
+
+The tutor is also instructed not to include bracket citations like `[1]`, `[2]`, or `[3]`; retrieved examples remain visible in the UI's retrieved examples panel instead.
+
+---
+
+## Teaching Modes
+
+| Mode | When Used | Behavior |
+|---|---|---|
+| `default` | No strong personalization signal | Balanced explanation matching predicted level |
+| `remedial` | Low mastery, repeated weak areas, or evaluator recommends revisiting | Simpler language, concrete example, re-teaches from scratch |
+| `clarification` | Partial understanding or weak concepts detected | Focuses on the confusing concept without repeating everything |
+| `advance` | High mastery and repeated topic exposure | Deeper explanation with next-step connections |
+
+---
+
+## Learner Profile Schema
+
+| Field | Type | Meaning |
+|---|---|---|
+| `sessions` | int | Number of logins/sessions |
+| `questions_asked` | int | Total questions asked |
+| `last_level` | str | Most recent predicted level |
+| `level_history` | list | Sequence of predicted levels |
+| `topics_seen` | list | Topics encountered by the learner |
+| `topic_counts` | dict | Number of visits/questions per topic |
+| `mastery` | dict | Mastery score by topic |
+| `weak_areas` | dict | Weak concepts by topic |
+| `used_explanations` | dict | Explanation styles already used by topic |
+| `recommended_next_topics` | list | Evaluator recommendations |
+| `last_evaluation` | dict | Latest structured evaluation |
 
 ---
 
 ## Common Issues
 
-| Issue | Resolution |
-|-------|------------|
-| Missing `GROQ_API_KEY` | Add to `.env` or set `$env:GROQ_API_KEY` in shell |
-| Dataset not found | Ensure `datasets/eduagent_dataset.csv` exists |
-| Classifier files missing | Keyword heuristic activates automatically — classification still works |
-| Empty progress charts | Normal for new profiles — populate after a few questions and evaluations |
-| No follow-up context | Ask a main question first, then answer the follow-up in the Evaluate tab |
-| Login/profile issues | Restart app so `init_db()` re-initializes the SQLite tables |
+| Issue | Fix |
+|---|---|
+| `.venv\Scripts\Activate.ps1` is missing | Recreate the virtual environment: `Rename-Item .venv .venv_old`, then `python -m venv .venv` |
+| PowerShell blocks activation | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, then `.\.venv\Scripts\Activate.ps1` |
+| Package import error after pulling changes | Activate `.venv` and rerun `python -m pip install -r requirements.txt` |
+| `ModuleNotFoundError: google.generativeai` | Install updated requirements, or run `python -m pip install google-generativeai` |
+| Missing `GEMINI_API_KEY` | Add `GEMINI_API_KEY=...` to `.env`; the app imports LLM features at startup |
+| Gemini quota or rate-limit errors | Wait for quota reset, reduce repeated calls, or switch `MODEL_NAME`/API key if allowed |
+| Classifier loads from Hugging Face instead of local | Confirm `models/distilbert_eduagent_v2/model.safetensors` exists and `CLASSIFIER_PATH` points to the local folder |
+
+| Semantic RAG falls back to TF-IDF | Confirm the local MiniLM cache works with the semantic embedding availability command in Validation Commands |
+| Hugging Face network checks fail for MiniLM | This is usually okay if the model is cached; `ml/embedder.py` uses `local_files_only=True` |
+
+| Whisper transcription fails | Install `ffmpeg`, reinstall `openai-whisper`, and check browser microphone permissions |
+| Text-to-speech does not play | Confirm `pyttsx3` is installed and Windows local speech support is available |
+| Invalid login credentials | Try the email address first; login supports email, username, or display name, but duplicate display names can be confusing |
+| Empty dashboard charts | Normal for new users; ask and evaluate a few questions first |
+| No follow-up context | Ask a main question before answering the evaluator |
+| Gradio app opens old UI | Stop the server, restart `python .\gradio_app.py`, and hard refresh the browser |
+| Dependency conflicts in global Python | Use the project `.venv`; avoid running the app with global Python |
 
 ---
 
-## Project Strengths
+## Development Notes
 
-- **97.92% classifier accuracy** — +35.8 pp over keyword heuristic, zero GPU required at inference (CPU DistilBERT)
-- **Two-pass personalized RAG** — separate query-driven and weak-area retrieval passes ground every answer in relevant dataset context
-- **Semantic topic detection** — alias table handles common abbreviations; MiniLM-L6-v2 handles paraphrases
-- **Four teaching modes** with different LLM instruction blocks — measurably different explanation styles for remedial vs. advanced learners
-- **Diminishing-returns mastery** — mastery cannot trivially reach 1.0; gains compress near saturation
-- **`used_explanations` deduplication** — same explanation style never repeated for a topic
-- **Pydantic-validated evaluator** — no unsafe raw dict access from LLM JSON responses
-- **49 unit tests** covering auth, memory, and profile layers
-- **SQLite WAL journal** — no database corruption on crash
-- **Local fallback answer** — app never hard-crashes on LLM timeout
-- **System Insights panel** for demo and professor-facing explainability
-- Conference-style research paper [`report.tex`](report.tex) included
-
----
-
-## Limitations
-
-- Mastery is a heuristic score, not a validated pedagogical model (e.g. Bayesian Knowledge Tracing).
-- Weak areas accumulate indefinitely — no forgetting or auto-clearing when mastery recovers.
-- Teaching mode selection uses string-matching on the LLM evaluator hint, not a trained classifier.
-- Retrieved examples ground the prompt but do not strictly prevent hallucinations for niche topics.
-- Single-user Gradio app — not designed for concurrent multi-user production deployment.
-
----
-
-## Future Work
-
-- Replace heuristic mastery with Bayesian Knowledge Tracing
-- Weak area decay / auto-clearing when mastery crosses a recovery threshold
-- Per-topic learning paths and exportable learner reports
-- Instructor analytics dashboard
-- Automated LLM response quality evaluation (G-Eval / LLM-as-judge)
-- Evaluation history charts
-- Production frontend with multi-user support
+- Keep `.env` private.
+- Do not commit real API keys.
+- Avoid printing password hashes.
+- Use the local virtual environment for all commands.
+- The local model weights are large; Git operations may be slower.
+- `runtime/` files are generated app state.
+- The app is suitable for demos and academic evaluation, not production multi-user deployment without additional hardening.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| UI | Gradio 6.0 |
-| LLM | Groq API — `llama-3.3-70b-versatile` |
-| Classifier | DistilBERT (`distilbert-base-uncased`, fine-tuned) via HuggingFace Transformers |
-| Embeddings | `sentence-transformers` — `all-MiniLM-L6-v2` (384-dim) |
-| TF-IDF fallback | scikit-learn `TfidfVectorizer` |
-| Database | SQLite (WAL journal) |
-| Auth | `passlib` PBKDF2-SHA256 |
-| Validation | Pydantic v2 |
+| Layer | Tools |
+|---|---|
+| UI | Gradio |
+| LLM | Gemini API through `google-generativeai` |
+| Tutor model | `gemini-2.0-flash` by default |
+| Difficulty classifier | Fine-tuned DistilBERT via Hugging Face Transformers |
+| Embeddings | `sentence-transformers` / `all-MiniLM-L6-v2` |
+| Retrieval fallback | scikit-learn TF-IDF |
+| Database | SQLite |
+| Auth | passlib PBKDF2-SHA256 |
+| Evaluation schema | Pydantic |
 | Charts | Matplotlib |
-| Data | Pandas, NumPy, scikit-learn |
+| Voice input | openai-whisper |
+| Voice output | pyttsx3 / local TTS wrapper |
+| Data | pandas, NumPy, scikit-learn |
 
 ---
 
 ## Summary
 
-EduAgent demonstrates a complete adaptive learning loop:
+EduAgent demonstrates a complete adaptive tutoring loop:
 
-```
-Question → DistilBERT Classify → Semantic Topic Detection
-→ Two-Pass RAG (query-driven + weak-area) → Read Memory
-→ Select Teaching Mode → Tutor Answer (mode-specific)
-→ Follow-up Question → Evaluate (Pydantic-validated)
-→ Update Mastery (diminishing returns) + Weak Areas + Used Explanations
-→ Save Profile → Dashboard Refresh
+```text
+Login
+-> Ask question by text or voice
+-> DistilBERT level classification
+-> Topic detection
+-> Two-pass personalized RAG
+-> Memory hint generation
+-> Teaching mode selection
+-> LLM tutor answer
+-> Follow-up question
+-> Learner reply
+-> Pydantic-validated evaluation
+-> Mastery and weak-area update
+-> SQLite profile save
+-> Dashboard refresh
+-> Optional answer audio playback
 ```
 
-Explanation style, depth, and focus change measurably between a first-time learner and a returning learner with recorded mastery history — the core goal of the adaptive personalization design.
+The central idea is personalization: two learners can ask similar questions and receive different explanation styles because EduAgent uses stored mastery, weak areas, prior explanation styles, and evaluation history to guide the next answer.

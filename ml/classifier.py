@@ -136,9 +136,47 @@ BEGINNER_INTENT_PHRASES = (
     "layman",
 )
 
+COMPARISON_INTENT_MARKERS = (
+    "compare ",
+    "difference between",
+    "differentiate between",
+    "distinguish between",
+    " vs ",
+    " versus ",
+)
+
+ADVANCED_COMPARISON_MARKERS = (
+    "derive",
+    "derivation",
+    "prove",
+    "proof",
+    "theorem",
+    "convergence",
+    "converge",
+    "mathematically",
+    "formally",
+    "theoretically",
+    "time complexity",
+    "space complexity",
+    "loss landscape",
+    "bias correction",
+    "generalization",
+    "trade-off",
+    "tradeoff",
+)
+
 
 def _has_advanced_intent(text_lower: str) -> bool:
     return any(marker in text_lower for marker in ADVANCED_INTENT_MARKERS)
+
+
+def _has_comparison_intent(text_lower: str) -> bool:
+    padded = f" {text_lower} "
+    return any(marker in padded for marker in COMPARISON_INTENT_MARKERS)
+
+
+def _has_advanced_comparison_intent(text_lower: str) -> bool:
+    return any(marker in text_lower for marker in ADVANCED_COMPARISON_MARKERS)
 
 
 def _has_beginner_intent(text_lower: str) -> bool:
@@ -197,6 +235,8 @@ def _vocabulary_complexity(text_lower: str) -> str | None:
 
 def _heuristic_predict(text_lower: str):
     word_count = len(text_lower.split())
+    if _has_comparison_intent(text_lower) and not _has_advanced_comparison_intent(text_lower):
+        return "intermediate", [0.1, 0.8, 0.1]
     if _has_advanced_intent(text_lower):
         return "advanced", [0.05, 0.15, 0.8]
     vocab_sig = _vocabulary_complexity(text_lower)
@@ -246,7 +286,9 @@ def predict_level(text):
     word_count = len(text_lower.split())
 
     # Heuristic overrides — applied after classifier
-    if _has_advanced_intent(text_lower):
+    if _has_comparison_intent(text_lower) and not _has_advanced_comparison_intent(text_lower):
+        predicted_label = "intermediate"
+    elif _has_advanced_intent(text_lower):
         predicted_label = "advanced"
     elif _has_beginner_intent(text_lower) and not _has_advanced_intent(text_lower) and word_count <= 8:
         predicted_label = "beginner"

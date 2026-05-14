@@ -173,6 +173,11 @@ def save_profile(user_id: int, profile: dict):
         )
     )
 
+    if cursor.rowcount == 0:
+        conn.rollback()
+        conn.close()
+        raise RuntimeError(f"Profile for user_id={user_id} does not exist and could not be saved.")
+
     conn.commit()
     conn.close()
 
@@ -214,10 +219,11 @@ def create_user(name: str, username: str, email: str, password_hash: str):
     return user_id
 
 
-def get_user_by_identifier(identifier: str):
+def get_users_by_identifier(identifier: str):
     """
-    Fetch user by email or username when the schema supports usernames.
+    Fetch candidate users by email, username, or display name.
     """
+    identifier = (identifier or "").strip().lower()
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("PRAGMA table_info(users)")
@@ -227,24 +233,40 @@ def get_user_by_identifier(identifier: str):
     optional_columns = [column for column in ("username", "created_at") if column in user_cols]
     selected_columns = ", ".join([pk_column, "name", *optional_columns, "email", "password_hash"])
 
-    if "username" in user_cols:
-        cursor.execute(
-            f"""
-            SELECT {selected_columns}
-            FROM users
-            WHERE email = ? OR username = ? OR lower(name) = ?
-            """,
-            (identifier, identifier, identifier),
-        )
-    else:
-        cursor.execute(
-            f"""
-            SELECT {selected_columns}
-            FROM users
-            WHERE email = ? OR lower(name) = ?
-            """,
-            (identifier, identifier),
-        )
-    row = cursor.fetchone()
+    username_match = "lower(username) = ?" if "username" in user_cols else "0"
+    cursor.execute(
+        f"""
+        SELECT {selected_columns}
+        FROM users
+        WHERE lower(email) = ?
+           OR {username_match}
+           OR lower(name) = ?
+        ORDER BY
+            CASE
+                WHEN lower(email) = ? THEN 0
+                WHEN {"lower(username) = ?" if "username" in user_cols else "0"} THEN 1
+                WHEN lower(name) = ? THEN 2
+                ELSE 3
+            END,
+            {pk_column} DESC
+        """,
+        (
+            identifier,
+            *( [identifier] if "username" in user_cols else [] ),
+            identifier,
+            identifier,
+            *( [identifier] if "username" in user_cols else [] ),
+            identifier,
+        ),
+    )
+    rows = cursor.fetchall()
     conn.close()
-    return row
+    return rows
+
+
+def get_user_by_identifier(identifier: str):
+    """
+    Fetch the best user match by email, username, or display name.
+    """
+    rows = get_users_by_identifier(identifier)
+    return rows[0] if rows else None

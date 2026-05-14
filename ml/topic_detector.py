@@ -36,7 +36,6 @@ TOPIC_ALIASES = {
         "deep learning",
         "dl",
         "artificial neural network",
-        "ann",
         "neural net",
         "neural nets",
         "perceptron",

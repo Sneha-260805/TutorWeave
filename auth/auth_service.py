@@ -1,10 +1,16 @@
 from auth.password_utils import hash_password, verify_password
-from db.profile_repository import create_user, get_user_by_identifier
+from db.profile_repository import create_user, get_users_by_identifier
 
 
 def _is_valid_email(email: str) -> bool:
     parts = email.split("@")
-    return len(parts) == 2 and parts[0] and "." in parts[1] and parts[1].split(".")[-1]
+    return (
+        len(parts) == 2
+        and bool(parts[0])
+        and "." in parts[1]
+        and not parts[1].startswith(".")
+        and bool(parts[1].split(".")[-1])
+    )
 
 
 def register_user(name, username, email, password):
@@ -30,11 +36,18 @@ def authenticate_user(identifier, password):
     if not identifier or not password:
         return None, "Enter email/username and password."
 
-    row = get_user_by_identifier(identifier)
-    if not row:
+    rows = get_users_by_identifier(identifier)
+    if not rows:
         return None, "Invalid credentials."
-    if not verify_password(password, row["password_hash"]):
+
+    row = None
+    for candidate in rows:
+        if verify_password(password, candidate["password_hash"]):
+            row = candidate
+            break
+    if row is None:
         return None, "Invalid credentials."
+
     user_id = row["id"] if "id" in row.keys() else row["user_id"]
     return {
         "user_id": user_id,

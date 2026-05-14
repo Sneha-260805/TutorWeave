@@ -1,9 +1,9 @@
 """
-RAG Evaluation for EduAgent — Groq LLaMA as LLM Judge
+RAG Evaluation for EduAgent — Gemini as LLM Judge
 =======================================================
 Optimized for minimal token usage and robust failure handling.
 
-Judge model : llama-3.1-8b-instant  (1 combined call per question, not 4)
+Judge model : gemini-2.0-flash  (1 combined call per question, not 4)
 Default N   : 5 questions
 Checkpoint  : eval/rag_eval_checkpoint.json  (auto-saves, --resume to continue)
 Modes       : full | retrieval | judge
@@ -43,27 +43,28 @@ sys.path.insert(0, str(ROOT))
 from dotenv import load_dotenv
 load_dotenv()
 
-from groq import Groq
+import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted
 from sklearn.metrics.pairwise import cosine_similarity
 
 from agents.memory_agent import ensure_profile_structure
-from config.settings import EVAL_MODEL, GROQ_API_KEY, N_EVAL_SAMPLES, RAG_TOP_N
+from config.settings import EVAL_MODEL, GEMINI_API_KEY, N_EVAL_SAMPLES, RAG_TOP_N
 from ml.embedder import embed_model, semantic_available
 from ml.retriever import retrieve_examples, retrieve_for_weak_areas
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 logger = logging.getLogger(__name__)
 
-if not GROQ_API_KEY:
-    raise ValueError("GROQ_API_KEY not found in .env file.")
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY not found in .env file.")
+
+genai.configure(api_key=GEMINI_API_KEY)
 
 JUDGE_MODEL = os.getenv("EVAL_MODEL", EVAL_MODEL)
 OUTPUT_DIR = ROOT / "eval"
 OUTPUT_DIR.mkdir(exist_ok=True)
 CHECKPOINT_FILE = OUTPUT_DIR / "rag_eval_checkpoint.json"
 RAW_JUDGE_LOG = OUTPUT_DIR / "rag_judge_raw.jsonl"
-
-judge_client = Groq(api_key=GROQ_API_KEY, timeout=25.0)
 BLANK_PROFILE = ensure_profile_structure({})
 
 
@@ -109,6 +110,8 @@ _guard = RateLimitGuard()
 
 
 def _is_429(exc: Exception) -> bool:
+    if isinstance(exc, ResourceExhausted):
+        return True
     s = str(exc).lower()
     return "429" in s or "rate_limit" in s or "rate limit" in s
 
@@ -207,7 +210,7 @@ def _make_judge_prompt(question: str, level: str, context_docs: list[dict], answ
 
 
 # =============================================================================
-# Groq judge caller
+# Gemini judge caller
 # =============================================================================
 
 def _log_raw(question: str, raw: str) -> None:
@@ -218,7 +221,7 @@ def _log_raw(question: str, raw: str) -> None:
         pass
 
 
-def call_groq_judge(
+def call_gemini_judge(
     question: str,
     level: str,
     context_docs: list[dict],
@@ -226,12 +229,11 @@ def call_groq_judge(
     max_retries: int = 2,
 ) -> dict:
     """
-    Call the Groq judge model.
+    Call the Gemini judge model.
 
     Returns a dict with keys: faithfulness, relevancy, context_use, level_fit,
     reason, raw, skipped.  All score fields are None when skipped or parse-failed.
     """
-    # Quota-exhausted sentinel — scores are None so they're excluded from averages
     _SKIP = dict(faithfulness=None, relevancy=None, context_use=None,
                  level_fit=None, reason="quota_exhausted", raw="", skipped=True,
                  parse_failed=False)
@@ -244,16 +246,16 @@ def call_groq_judge(
 
     for attempt in range(max_retries + 1):
         try:
-            resp = judge_client.chat.completions.create(
-                model=JUDGE_MODEL,
-                messages=[
-                    {"role": "system", "content": JUDGE_SYSTEM},
-                    {"role": "user",   "content": prompt},
-                ],
-                temperature=0.0,
-                max_tokens=110,
+            judge_model = genai.GenerativeModel(
+                model_name=JUDGE_MODEL,
+                system_instruction=JUDGE_SYSTEM,
             )
-            raw_text = resp.choices[0].message.content.strip()
+            resp = judge_model.generate_content(
+                [{"role": "user", "parts": [prompt]}],
+                generation_config=genai.GenerationConfig(temperature=0.0, max_output_tokens=110),
+                request_options={"timeout": 25},
+            )
+            raw_text = resp.text.strip()
             _guard.record_success()
 
             parsed = _extract_json(raw_text)
@@ -466,7 +468,7 @@ def evaluate_one(item: dict, idx: int, total: int, mode: str) -> dict:
 
     # ── LLM Judge ─────────────────────────────────────────────────────────────
     logger.info("  → calling judge (model=%s)...", JUDGE_MODEL)
-    judge = call_groq_judge(
+    judge = call_gemini_judge(
         _sanitize(q, 200), level, context_docs, _sanitize(answer, 550)
     )
     time.sleep(1.2)  # polite rate-limit pause

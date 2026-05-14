@@ -108,15 +108,27 @@ def update_profile_after_evaluation(profile: Dict, topic: str, evaluation: Dict)
 
     profile["mastery"][topic] = round(current_mastery, 2)
 
-    # Merge weak concepts
+    # Update weak concepts based on understanding level
     existing = set(profile["weak_areas"].get(topic, []))
-    for concept in weak_concepts:
-        if concept and isinstance(concept, str):
-            existing.add(concept.strip())
 
-    # Also treat repeated topic revisits as a weakness signal
-    if profile["topic_counts"].get(topic, 0) >= 3 and not weak_concepts:
-        existing.add("core understanding")
+    if understanding == "good":
+        # Learner demonstrated good understanding — resolve weak concepts.
+        # If the evaluator flagged specific concepts, remove only those;
+        # if no concepts flagged, clear all weak areas for the topic.
+        resolved = {c.strip() for c in weak_concepts if c and isinstance(c, str)}
+        if resolved:
+            existing -= resolved
+        else:
+            existing.clear()
+    else:
+        # partial or poor: accumulate newly identified weak concepts
+        for concept in weak_concepts:
+            if concept and isinstance(concept, str):
+                existing.add(concept.strip())
+
+        # Treat repeated topic revisits with no identified concepts as a weak signal
+        if profile["topic_counts"].get(topic, 0) >= 3 and not weak_concepts:
+            existing.add("core understanding")
 
     profile["weak_areas"][topic] = sorted(list(existing))
 

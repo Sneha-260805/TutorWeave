@@ -5,4 +5,4 @@ from app.ui import CUSTOM_CSS
 
 if __name__ == "__main__":
     demo = create_app()
-    demo.launch(theme=gr.themes.Soft(), css=CUSTOM_CSS)
+    demo.launch(theme=gr.themes.Soft(), css=CUSTOM_CSS, share=True)
