@@ -298,8 +298,10 @@ label,
     color: #f8fafc;
 }
 .gradio-container [data-testid="block-label"] {
-    color: #9ca3af !important;
+    color: #f8fafc !important;
     background: rgba(15, 23, 42, 0.92) !important;
+    border-radius: 0.65rem !important;
+    padding: 0.4rem 0.75rem !important;
 }
 .gradio-container .tabs,
 .gradio-container .tabitem,
@@ -308,9 +310,11 @@ label,
 }
 .gradio-container .tab-nav button {
     color: #cbd5e1 !important;
+    background: rgba(15, 23, 42, 0.18) !important;
 }
 .gradio-container .tab-nav button.selected {
-    color: #5eead4 !important;
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #14b8a6, #2563eb) !important;
     border-color: #14b8a6 !important;
 }
 .gradio-container .wrap,
@@ -390,6 +394,226 @@ pre {
     color: #d1fae5 !important;
     border-color: rgba(148, 163, 184, 0.18) !important;
 }
+@media (prefers-color-scheme: light) {
+    :root {
+        color-scheme: light;
+    }
+    body {
+        background: #f8fafc !important;
+    }
+    .gradio-container {
+        background: transparent !important;
+        color: #1e293b;
+        --body-background-fill: #f8fafc;
+        --background-fill-primary: #e2e8f0;
+        --background-fill-secondary: #cbd5e1;
+        --block-background-fill: #ffffff;
+        --block-border-color: rgba(15, 23, 42, 0.2);
+        --block-info-text-color: #64748b;
+        --body-text-color: #1e293b;
+        --body-text-color-subdued: #64748b;
+        --input-background-fill: #ffffff;
+        --input-border-color: rgba(15, 23, 42, 0.15);
+        --button-primary-background-fill: linear-gradient(135deg, #14b8a6, #2563eb);
+        --button-primary-background-fill-hover: linear-gradient(135deg, #2dd4bf, #3b82f6);
+        --button-primary-text-color: #ffffff;
+        --button-secondary-background-fill: #e2e8f0;
+        --button-secondary-background-fill-hover: #cbd5e1;
+        --button-secondary-text-color: #1e293b;
+        --border-color-primary: rgba(15, 23, 42, 0.15);
+        --border-color-accent: rgba(20, 184, 166, 0.6);
+    }
+    .main-title {
+        color: #0f172a;
+    }
+    .sub-title {
+        color: #64748b;
+    }
+    .auth-hero {
+        background: linear-gradient(145deg, rgba(203, 213, 225, 0.3), rgba(226, 232, 240, 0.2));
+        border-color: rgba(15, 23, 42, 0.18);
+    }
+    .auth-kicker {
+        color: #0d9488;
+    }
+    .auth-headline {
+        color: #0f172a;
+    }
+    .auth-copy {
+        color: #475569;
+    }
+    .auth-metric {
+        background: rgba(226, 232, 240, 0.5);
+        border-color: rgba(15, 23, 42, 0.18);
+    }
+    .auth-metric strong {
+        color: #0f172a;
+    }
+    .auth-metric span {
+        color: #64748b;
+    }
+    .auth-pill {
+        background: rgba(13, 148, 136, 0.12);
+        color: #0d9488;
+        border-color: rgba(13, 148, 136, 0.35);
+    }
+    .auth-card {
+        background: rgba(248, 250, 252, 0.95);
+        border-color: rgba(15, 23, 42, 0.15);
+    }
+    .auth-card::before {
+        color: #1e293b;
+    }
+    .auth-card::after {
+        color: #64748b;
+    }
+    .topbar {
+        background: rgba(226, 232, 240, 0.6);
+        border-color: rgba(15, 23, 42, 0.15);
+    }
+    .welcome-text {
+        color: #1e293b;
+    }
+    .chat-panel,
+    .dashboard-card {
+        background: #ffffff;
+        border-color: rgba(15, 23, 42, 0.15);
+    }
+    .dashboard-shell {
+        background: rgba(248, 250, 252, 0.95);
+        border-color: rgba(15, 23, 42, 0.15);
+    }
+    .dashboard-eyebrow {
+        color: #0d9488;
+    }
+    .dashboard-name {
+        color: #0f172a;
+    }
+    .dashboard-note {
+        color: #64748b;
+    }
+    .dashboard-tabs > .tab-nav,
+    .chart-tabs > .tab-nav {
+        border-bottom-color: rgba(15, 23, 42, 0.15) !important;
+    }
+    .dashboard-tabs > .tab-nav button,
+    .chart-tabs > .tab-nav button {
+        background: rgba(226, 232, 240, 0.6) !important;
+        border-color: rgba(15, 23, 42, 0.15) !important;
+        color: #475569 !important;
+    }
+    .dashboard-tabs > .tab-nav button.selected,
+    .chart-tabs > .tab-nav button.selected {
+        background: rgba(20, 184, 166, 0.2) !important;
+        border-color: rgba(13, 148, 136, 0.5) !important;
+        color: #0d9488 !important;
+    }
+    .compact-card {
+        background: rgba(226, 232, 240, 0.4);
+        border-color: rgba(15, 23, 42, 0.15);
+    }
+    .chart-panel {
+        background: rgba(226, 232, 240, 0.4);
+        border-color: rgba(15, 23, 42, 0.15);
+    }
+    .scroll-panel {
+        color: #1e293b;
+    }
+    .research-panel {
+        background: rgba(226, 232, 240, 0.4);
+        border-color: rgba(15, 23, 42, 0.15);
+    }
+    .section-title {
+        color: #0f172a;
+    }
+    .muted-caption {
+        color: #64748b;
+    }
+    textarea,
+    input {
+        color: #1e293b !important;
+        background: #ffffff !important;
+        border-color: rgba(15, 23, 42, 0.2) !important;
+    }
+    label,
+    .label-wrap,
+    .gradio-container span,
+    .gradio-container p,
+    .gradio-container li {
+        color: #475569;
+    }
+    .prose,
+    .markdown,
+    .gradio-container h1,
+    .gradio-container h2,
+    .gradio-container h3,
+    .gradio-container h4 {
+        color: #0f172a;
+    }
+    .gradio-container [data-testid="block-label"] {
+        color: #0f172a !important;
+        background: rgba(226, 232, 240, 0.8) !important;
+    }
+    .gradio-container .tab-nav button {
+        color: #475569 !important;
+        background: rgba(226, 232, 240, 0.5) !important;
+    }
+    .gradio-container .tab-nav button.selected {
+        color: #ffffff !important;
+        background: linear-gradient(135deg, #14b8a6, #2563eb) !important;
+    }
+    .gradio-container .wrap,
+    .gradio-container .block,
+    .gradio-container .form,
+    .gradio-container .panel {
+        background: #ffffff !important;
+        border-color: rgba(15, 23, 42, 0.15) !important;
+    }
+    .chatbot {
+        background: #ffffff !important;
+        border-color: rgba(15, 23, 42, 0.15) !important;
+    }
+    .eval-card {
+        background: rgba(248, 250, 252, 0.9);
+        border-color: rgba(15, 23, 42, 0.15);
+    }
+    .eval-good {
+        background: rgba(22, 163, 74, 0.1);
+        border-color: rgba(22, 163, 74, 0.4);
+    }
+    .eval-partial {
+        background: rgba(217, 119, 6, 0.1);
+        border-color: rgba(217, 119, 6, 0.4);
+    }
+    .eval-poor {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.4);
+    }
+    .profile-card {
+        background: rgba(226, 232, 240, 0.5);
+        border-color: rgba(15, 23, 42, 0.15);
+    }
+    .profile-card h4 {
+        color: #0d9488;
+    }
+    .profile-card p,
+    .profile-card li {
+        color: #475569;
+    }
+    .insight-block {
+        background: rgba(226, 232, 240, 0.5);
+        border-color: rgba(15, 23, 42, 0.15);
+    }
+    .insight-block h4 {
+        color: #0d9488;
+    }
+    code,
+    pre {
+        background: #f1f5f9 !important;
+        color: #164e63 !important;
+        border-color: rgba(15, 23, 42, 0.15) !important;
+    }
+}
 @media (max-width: 900px) {
     .auth-hero {
         min-height: auto;
@@ -403,6 +627,35 @@ pre {
 }
 """
 
+RECORDER_LABEL_JS = """
+<script>
+(() => {
+    const renameStopButton = () => {
+        document.querySelectorAll("#record-question-audio button").forEach((button) => {
+            const label = button.textContent.trim();
+            if (label === "Stop") {
+                button.childNodes.forEach((node) => {
+                    if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === "Stop") {
+                        node.textContent = "Confirm";
+                    }
+                });
+                if (button.textContent.trim() === "Stop") {
+                    button.textContent = "Confirm";
+                }
+            }
+        });
+    };
+
+    renameStopButton();
+    new MutationObserver(renameStopButton).observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+    });
+})();
+</script>
+"""
+
 
 def build_demo(
     handle_signup,
@@ -411,6 +664,8 @@ def build_demo(
     ask_eduagent,
     clear_chat,
     handle_followup_reply=None,
+    transcribe_question_handler=None,
+    read_answer_handler=None,
 ):
     with gr.Blocks() as demo:
         gr.HTML(
@@ -419,6 +674,7 @@ def build_demo(
             <div class="sub-title">Learner-aware tutoring with difficulty detection, topic retrieval, memory, and comprehension checking</div>
             """
         )
+        gr.HTML(RECORDER_LABEL_JS)
         auth_status = gr.Markdown("", elem_classes=["auth-status"])
         user_state = gr.State(None)
         logged_in = gr.State(False)
@@ -488,8 +744,24 @@ def build_demo(
                             lines=3,
                         )
                         with gr.Row():
+                            voice_input = gr.Audio(
+                                sources=["microphone"],
+                                type="filepath",
+                                label="Record Question",
+                                interactive=True,
+                                elem_id="record-question-audio",
+                            )
+                            answer_audio = gr.Audio(
+                                type="filepath",
+                                label="Answer Audio",
+                                interactive=False,
+                                autoplay=True,
+                            )
+                        with gr.Row():
                             ask_btn = gr.Button("Ask EduAgent", variant="primary")
+                            read_answer_btn = gr.Button("Read Answer", variant="secondary", interactive=False)
                             clear_btn = gr.Button("Clear Chat")
+                        last_answer_state = gr.State("")
 
                 with gr.Column(scale=5, min_width=460):
                     with gr.Group(elem_classes=["dashboard-shell"]):
@@ -579,6 +851,19 @@ def build_demo(
             profile_md, examples_md, insights_md, mastery_plot, revisit_plot, weak_concept_plot,
         ]
 
+        def _capture_last_answer(followup_context):
+            last_answer = ""
+            if isinstance(followup_context, dict):
+                last_answer = followup_context.get("last_tutor_answer", "") or ""
+            return last_answer, gr.update(interactive=bool(last_answer))
+
+        if transcribe_question_handler is not None:
+            voice_input.stop_recording(
+                fn=transcribe_question_handler,
+                inputs=[voice_input, user_input],
+                outputs=[user_input],
+            )
+
         signup_btn.click(
             fn=handle_signup,
             inputs=[signup_name, signup_username, signup_email, signup_password],
@@ -621,6 +906,10 @@ def build_demo(
             fn=lambda: (gr.update(value="Ask EduAgent", interactive=True), ""),
             inputs=None,
             outputs=[ask_btn, user_input],
+        ).then(
+            fn=_capture_last_answer,
+            inputs=[followup_context_state],
+            outputs=[last_answer_state, read_answer_btn],
         )
 
         user_input.submit(
@@ -635,7 +924,22 @@ def build_demo(
             fn=lambda: (gr.update(value="Ask EduAgent", interactive=True), ""),
             inputs=None,
             outputs=[ask_btn, user_input],
+        ).then(
+            fn=_capture_last_answer,
+            inputs=[followup_context_state],
+            outputs=[last_answer_state, read_answer_btn],
         )
+
+        if read_answer_handler is not None:
+            read_answer_btn.click(
+                fn=lambda: gr.update(value=None),
+                inputs=None,
+                outputs=[answer_audio],
+            ).then(
+                fn=read_answer_handler,
+                inputs=[last_answer_state],
+                outputs=[answer_audio],
+            )
 
         if handle_followup_reply is not None:
             eval_btn.click(
@@ -648,7 +952,11 @@ def build_demo(
             fn=clear_chat,
             inputs=[user_state],
             outputs=_ask_outputs,
-        ).then(fn=lambda: ("", "", "No evaluation yet."), inputs=None, outputs=[followup_reply, eval_status, evaluation_md])
+        ).then(
+            fn=lambda: ("", "", "No evaluation yet.", "", gr.update(interactive=False), None),
+            inputs=None,
+            outputs=[followup_reply, eval_status, evaluation_md, last_answer_state, read_answer_btn, answer_audio],
+        )
     return demo
 
 

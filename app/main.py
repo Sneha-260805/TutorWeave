@@ -1,4 +1,5 @@
 import json
+import logging
 from html import escape
 
 import gradio as gr
@@ -22,6 +23,7 @@ from agents.memory_agent import (
     build_evaluation_strategy_hint,
 )
 from app.ui import build_demo
+from voice.utils import transcribe_audio_path, synthesize_text_to_wav
 
 
 def confidence_to_text(conf):
@@ -682,6 +684,28 @@ def create_app():
             "weak_concept_plot": build_weak_concepts_chart(profile_obj),
         }, _EVAL_KEYS)
 
+    def transcribe_question_handler(audio_path, current_text):
+        """Transcribe a recorded question into the normal Ask textbox."""
+        if not audio_path:
+            return current_text or ""
+
+        transcription, _confidence = transcribe_audio_path(audio_path)
+        if not transcription:
+            gr.Warning("Could not transcribe the recording. Please try again or type your question.")
+            return current_text or ""
+        return transcription
+
+    def read_answer_handler(last_answer_text):
+        """Read the answer text aloud"""
+        if not last_answer_text:
+            return ""
+        try:
+            audio_path = synthesize_text_to_wav(last_answer_text)
+            return audio_path or ""
+        except Exception as e:
+            logging.error(f"TTS failed: {e}")
+            return ""
+
     return build_demo(
         handle_signup=handle_signup,
         handle_login=handle_login,
@@ -689,4 +713,6 @@ def create_app():
         ask_eduagent=ask_eduagent,
         clear_chat=clear_chat,
         handle_followup_reply=handle_eval_reply,
+        transcribe_question_handler=transcribe_question_handler,
+        read_answer_handler=read_answer_handler,
     )
