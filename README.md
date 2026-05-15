@@ -5,6 +5,7 @@ EduAgent is an adaptive AI/ML tutoring application built with Gradio. It combine
 The project is designed as a complete academic/course project: it is not just a chatbot UI. It tracks each learner, adapts explanation style based on mastery and weak areas, retrieves relevant dataset examples before answering, evaluates the learner's follow-up response, and updates the learner profile after each interaction.
 
 The full written report is available in [`report.tex`](report.tex) and [`report.pdf`](report.pdf).
+The website for showcasing the project is deployed here - [`Eduagent Showcase`](https://sneha-260805.github.io/EduAgent/). 
 
 ---
 
