@@ -1,12 +1,12 @@
-# EduAgent
+# TutorWeave
 
-EduAgent is an adaptive AI/ML tutoring application built with Gradio. It combines a fine-tuned local DistilBERT difficulty classifier, semantic topic detection, two-pass personalized RAG, learner memory, follow-up evaluation, SQLite user profiles, and voice interaction through speech-to-text and text-to-speech.
+TutorWeave is an adaptive AI/ML tutoring application built with Gradio. It combines a fine-tuned local DistilBERT difficulty classifier, semantic topic detection, two-pass personalized RAG, learner memory, follow-up evaluation, SQLite user profiles, and voice interaction through speech-to-text and text-to-speech.
 
 The project is designed as a complete academic/course project: it is not just a chatbot UI. It tracks each learner, adapts explanation style based on mastery and weak areas, retrieves relevant dataset examples before answering, evaluates the learner's follow-up response, and updates the learner profile after each interaction.
 
 The full written report is available in [`report.tex`](report.tex) and [`report.pdf`](report.pdf). 
 
-The project showcase website is deployed at: [EduAgent Showcase](https://sneha-260805.github.io/EduAgent/).
+The project showcase website is deployed at: [TutorWeave Showcase](https://sneha-260805.github.io/TutorWeave/).
 ---
 
 ## What The App Does
@@ -33,7 +33,7 @@ The project showcase website is deployed at: [EduAgent Showcase](https://sneha-2
 - Login, signup, logout, and authenticated learner sessions.
 - SQLite-backed user and profile storage.
 - PBKDF2-SHA256 password hashing through `passlib`.
-- Local fine-tuned DistilBERT classifier stored in `models/distilbert_eduagent_v2`.
+- Local fine-tuned DistilBERT classifier stored in `models/distilbert_tutorweave_v2`.
 - Hugging Face classifier fallback through `CLASSIFIER_HF_REPO`.
 - Classifier calibration for short comparison questions, so ordinary comparisons like "compare Adam and RMSProp" are treated as `intermediate` while deeper mathematical comparisons stay `advanced`.
 - Semantic topic detection with alias matching and locally cached MiniLM embeddings, plus TF-IDF fallback.
@@ -64,24 +64,24 @@ The project showcase website is deployed at: [EduAgent Showcase](https://sneha-2
 The main classifier model is the local DistilBERT model:
 
 ```text
-models\distilbert_eduagent_v2
+models\distilbert_tutorweave_v2
 ```
 
 The active setting is in [`config/settings.py`](config/settings.py):
 
 ```python
-CLASSIFIER_PATH = str(BASE_DIR / "models" / "distilbert_eduagent_v2")
+CLASSIFIER_PATH = str(BASE_DIR / "models" / "distilbert_tutorweave_v2")
 CLASSIFIER_HF_REPO = os.getenv("CLASSIFIER_HF_REPO", "SSneha2005/Eduagent_distilbert")
 ```
 
 The trained DistilBERT weights are also uploaded on Hugging Face at
 [`SSneha2005/Eduagent_distilbert`](https://huggingface.co/SSneha2005/Eduagent_distilbert).
-EduAgent uses this repository as the fallback source when local model weights are not available.
+TutorWeave uses this repository as the fallback source when local model weights are not available.
 
 The local model folder contains:
 
 ```text
-models/distilbert_eduagent_v2/
+models/distilbert_tutorweave_v2/
   config.json
   model.safetensors
   tokenizer.json
@@ -121,7 +121,7 @@ Derive the Adam update rule and compare it with RMSProp -> advanced
 The active RAG dataset is configured in [`config/settings.py`](config/settings.py):
 
 ```python
-DATASET_FILE = str(BASE_DIR / "datasets" / "data_easy" / "eduagent_dataset_easy_v2.csv")
+DATASET_FILE = str(BASE_DIR / "datasets" / "data_easy" / "tutorweave_dataset_easy_v2.csv")
 ```
 
 The dataset should contain at least:
@@ -137,13 +137,13 @@ Some generated datasets may also include extra metadata columns such as `subtopi
 User data is stored in SQLite:
 
 ```text
-runtime\eduagent_app.db
+runtime\tutorweave_app.db
 ```
 
 The database file can be overridden with:
 
 ```text
-EDUAGENT_DB_FILE=path\to\custom.db
+TUTORWEAVE_DB_FILE=path\to\custom.db
 ```
 
 Important tables:
@@ -160,7 +160,7 @@ The `users` table stores authentication data. The `profiles` table stores learne
 ## Project Structure
 
 ```text
-EduAgent/
+TutorWeave/
   gradio_app.py
   README.md
   ARCHITECTURE.md
@@ -205,12 +205,12 @@ EduAgent/
 
   datasets/
     data_easy/
-      eduagent_dataset_easy_v2.csv
-    eduagent_dataset.csv
-    eduagent_training_ready.csv
+      tutorweave_dataset_easy_v2.csv
+    tutorweave_dataset.csv
+    tutorweave_training_ready.csv
 
   models/
-    distilbert_eduagent_v2/ # primary local classifier model
+    distilbert_tutorweave_v2/ # primary local classifier model
 
   eval/
     run_evaluation.py
@@ -224,7 +224,7 @@ EduAgent/
     test_profile.py
 
   runtime/
-    eduagent_app.db         # active SQLite app database
+    tutorweave_app.db         # active SQLite app database
 ```
 
 ---
@@ -346,7 +346,7 @@ Scores are clamped between `0.0` and `1.0`.
 Loads the local DistilBERT classifier from:
 
 ```text
-models\distilbert_eduagent_v2
+models\distilbert_tutorweave_v2
 ```
 
 The classifier predicts:
@@ -496,7 +496,7 @@ EVAL_MODEL=gemini-2.0-flash
 Optional database override:
 
 ```text
-EDUAGENT_DB_FILE=runtime\eduagent_app.db
+TUTORWEAVE_DB_FILE=runtime\tutorweave_app.db
 ```
 
 The app currently raises an error if `GEMINI_API_KEY` is missing because LLM features are imported at startup.
@@ -505,9 +505,9 @@ The app currently raises an error if `GEMINI_API_KEY` is missing because LLM fea
 
 ## Why Gemini 2.0 Flash?
 
-EduAgent uses `gemini-2.0-flash` because the application is an interactive tutor, so response speed and cost efficiency matter. A learner may ask many questions in one session, answer follow-up questions, and repeatedly refresh personalized feedback. A fast model keeps this loop usable in a live Gradio demo.
+TutorWeave uses `gemini-2.0-flash` because the application is an interactive tutor, so response speed and cost efficiency matter. A learner may ask many questions in one session, answer follow-up questions, and repeatedly refresh personalized feedback. A fast model keeps this loop usable in a live Gradio demo.
 
-The LLM is not working alone. Before the answer is generated, EduAgent already supplies structured context:
+The LLM is not working alone. Before the answer is generated, TutorWeave already supplies structured context:
 
 - DistilBERT predicts the learner difficulty level.
 - Topic detection identifies the relevant AI/ML concept.
@@ -592,7 +592,7 @@ Text-to-speech uses `pyttsx3` fallback behavior. On Windows, TTS depends on loca
 The active SQLite database is:
 
 ```text
-runtime\eduagent_app.db
+runtime\tutorweave_app.db
 ```
 
 Open it with DB Browser for SQLite, or inspect it with Python.
@@ -600,13 +600,13 @@ Open it with DB Browser for SQLite, or inspect it with Python.
 View users without printing password hashes:
 
 ```powershell
-.\.venv\Scripts\python.exe -c "import sqlite3; conn=sqlite3.connect('runtime/eduagent_app.db'); conn.row_factory=sqlite3.Row; rows=conn.execute('SELECT id, username, name, email, created_at FROM users ORDER BY id').fetchall(); [print(dict(r)) for r in rows]; conn.close()"
+.\.venv\Scripts\python.exe -c "import sqlite3; conn=sqlite3.connect('runtime/tutorweave_app.db'); conn.row_factory=sqlite3.Row; rows=conn.execute('SELECT id, username, name, email, created_at FROM users ORDER BY id').fetchall(); [print(dict(r)) for r in rows]; conn.close()"
 ```
 
 View learner profile summaries:
 
 ```powershell
-.\.venv\Scripts\python.exe -c "import sqlite3; conn=sqlite3.connect('runtime/eduagent_app.db'); conn.row_factory=sqlite3.Row; rows=conn.execute('SELECT user_id, sessions, questions_asked, last_level, topics_seen, mastery, weak_areas FROM profiles ORDER BY user_id').fetchall(); [print(dict(r)) for r in rows]; conn.close()"
+.\.venv\Scripts\python.exe -c "import sqlite3; conn=sqlite3.connect('runtime/tutorweave_app.db'); conn.row_factory=sqlite3.Row; rows=conn.execute('SELECT user_id, sessions, questions_asked, last_level, topics_seen, mastery, weak_areas FROM profiles ORDER BY user_id').fetchall(); [print(dict(r)) for r in rows]; conn.close()"
 ```
 
 Do not expose `password_hash` values in screenshots or reports.
@@ -624,7 +624,7 @@ Quick classifier source check:
 Expected source:
 
 ```text
-local (...\models\distilbert_eduagent_v2)
+local (...\models\distilbert_tutorweave_v2)
 ```
 
 Check classifier calibration:
@@ -691,7 +691,7 @@ python .\rag_evaluation.py
 ## Important Runtime Files
 
 ```text
-runtime/eduagent_app.db
+runtime/tutorweave_app.db
 ```
 
 Main SQLite database.
@@ -709,7 +709,7 @@ eval/rag_eval_report.md
 Generated RAG evaluation report.
 
 ```text
-models/distilbert_eduagent_v2/model.safetensors
+models/distilbert_tutorweave_v2/model.safetensors
 ```
 
 Primary local DistilBERT classifier weights.
@@ -739,7 +739,7 @@ Main settings live in [`config/settings.py`](config/settings.py).
 
 ## RAG Details
 
-EduAgent uses retrieval-augmented generation rather than sending the learner question directly to the LLM.
+TutorWeave uses retrieval-augmented generation rather than sending the learner question directly to the LLM.
 
 The retrieval source is the configured CSV dataset. Each row contains an educational question/answer pair with difficulty and topic metadata.
 
@@ -803,7 +803,7 @@ The tutor is also instructed not to include bracket citations like `[1]`, `[2]`,
 | `ModuleNotFoundError: google.generativeai` | Install updated requirements, or run `python -m pip install google-generativeai` |
 | Missing `GEMINI_API_KEY` | Add `GEMINI_API_KEY=...` to `.env`; the app imports LLM features at startup |
 | Gemini quota or rate-limit errors | Wait for quota reset, reduce repeated calls, or switch `MODEL_NAME`/API key if allowed |
-| Classifier loads from Hugging Face instead of local | Confirm `models/distilbert_eduagent_v2/model.safetensors` exists and `CLASSIFIER_PATH` points to the local folder |
+| Classifier loads from Hugging Face instead of local | Confirm `models/distilbert_tutorweave_v2/model.safetensors` exists and `CLASSIFIER_PATH` points to the local folder |
 | Semantic RAG falls back to TF-IDF | Confirm the local MiniLM cache works with the semantic embedding availability command in Validation Commands |
 | Hugging Face network checks fail for MiniLM | This is usually okay if the model is cached; `ml/embedder.py` uses `local_files_only=True` |
 | Whisper transcription fails | Install `ffmpeg`, reinstall `openai-whisper`, and check browser microphone permissions |
@@ -850,7 +850,7 @@ The tutor is also instructed not to include bracket citations like `[1]`, `[2]`,
 
 ## Summary
 
-EduAgent demonstrates a complete adaptive tutoring loop:
+TutorWeave demonstrates a complete adaptive tutoring loop:
 
 ```text
 Login
@@ -870,4 +870,4 @@ Login
 -> Optional answer audio playback
 ```
 
-The central idea is personalization: two learners can ask similar questions and receive different explanation styles because EduAgent uses stored mastery, weak areas, prior explanation styles, and evaluation history to guide the next answer.
+The central idea is personalization: two learners can ask similar questions and receive different explanation styles because TutorWeave uses stored mastery, weak areas, prior explanation styles, and evaluation history to guide the next answer.
