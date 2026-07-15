@@ -8,6 +8,7 @@ sentence-transformers
 tf-keras
 gradio
 google-generativeai
+groq
 matplotlib
 seaborn
 wordcloud

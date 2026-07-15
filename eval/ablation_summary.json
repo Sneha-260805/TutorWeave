@@ -1,0 +1,456 @@
+{
+  "variants": {
+    "full__baseline": {
+      "answer_words": {
+        "mean": 140,
+        "std": 45.078,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.923,
+        "std": 0.025,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": 0.804,
+        "std": 0.043,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.666,
+        "std": 0.13,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 6.425,
+        "std": 3.258,
+        "n": 5
+      }
+    },
+    "full__personalized": {
+      "answer_words": {
+        "mean": 140,
+        "std": 45.078,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.923,
+        "std": 0.025,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": 0.804,
+        "std": 0.043,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.666,
+        "std": 0.13,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.786,
+        "std": 0.605,
+        "n": 5
+      }
+    },
+    "no_classifier__baseline": {
+      "answer_words": {
+        "mean": 125,
+        "std": 7.874,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.918,
+        "std": 0.007,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": 0.796,
+        "std": 0.015,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.709,
+        "std": 0.051,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 6.094,
+        "std": 2.546,
+        "n": 5
+      }
+    },
+    "no_classifier__personalized": {
+      "answer_words": {
+        "mean": 125,
+        "std": 7.874,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.918,
+        "std": 0.007,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": 0.796,
+        "std": 0.015,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.709,
+        "std": 0.051,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.862,
+        "std": 0.497,
+        "n": 5
+      }
+    },
+    "no_evaluator_loop__baseline": {
+      "answer_words": {
+        "mean": 140,
+        "std": 45.078,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.923,
+        "std": 0.025,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": 0.804,
+        "std": 0.043,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.666,
+        "std": 0.13,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.369,
+        "std": 0.065,
+        "n": 5
+      }
+    },
+    "no_evaluator_loop__personalized": {
+      "answer_words": {
+        "mean": 140,
+        "std": 45.078,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.923,
+        "std": 0.025,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": 0.804,
+        "std": 0.043,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.666,
+        "std": 0.13,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.513,
+        "std": 0.129,
+        "n": 5
+      }
+    },
+    "no_memory__baseline": {
+      "answer_words": {
+        "mean": 140,
+        "std": 45.078,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.923,
+        "std": 0.025,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": 0.804,
+        "std": 0.043,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.666,
+        "std": 0.13,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.394,
+        "std": 0.068,
+        "n": 5
+      }
+    },
+    "no_memory__personalized": {
+      "answer_words": {
+        "mean": 140,
+        "std": 45.078,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.923,
+        "std": 0.025,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": 0.804,
+        "std": 0.043,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.666,
+        "std": 0.13,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.418,
+        "std": 0.113,
+        "n": 5
+      }
+    },
+    "no_retrieval__baseline": {
+      "answer_words": {
+        "mean": 26.8,
+        "std": 0.837,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.076,
+        "std": 0.022,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": -0.156,
+        "std": 0.044,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.313,
+        "std": 0.078,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.311,
+        "std": 0.049,
+        "n": 5
+      }
+    },
+    "no_retrieval__personalized": {
+      "answer_words": {
+        "mean": 26.8,
+        "std": 0.837,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.076,
+        "std": 0.022,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": -0.156,
+        "std": 0.044,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.313,
+        "std": 0.078,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.299,
+        "std": 0.049,
+        "n": 5
+      }
+    },
+    "no_weak_retrieval__baseline": {
+      "answer_words": {
+        "mean": 140,
+        "std": 45.078,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.923,
+        "std": 0.025,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": 0.804,
+        "std": 0.043,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.666,
+        "std": 0.13,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.483,
+        "std": 0.17,
+        "n": 5
+      }
+    },
+    "no_weak_retrieval__personalized": {
+      "answer_words": {
+        "mean": 140,
+        "std": 45.078,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.923,
+        "std": 0.025,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": 0.804,
+        "std": 0.043,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.666,
+        "std": 0.13,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.459,
+        "std": 0.193,
+        "n": 5
+      }
+    },
+    "plain_llm__baseline": {
+      "answer_words": {
+        "mean": 6,
+        "std": 0.0,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.044,
+        "std": 0.016,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": -0.036,
+        "std": 0.049,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.077,
+        "std": 0.069,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.188,
+        "std": 0.033,
+        "n": 5
+      }
+    },
+    "plain_llm__personalized": {
+      "answer_words": {
+        "mean": 6,
+        "std": 0.0,
+        "n": 5
+      },
+      "rouge_l_f1": {
+        "mean": 0.044,
+        "std": 0.016,
+        "n": 5
+      },
+      "bert_score_f1": {
+        "mean": -0.036,
+        "std": 0.049,
+        "n": 5
+      },
+      "semantic_similarity": {
+        "mean": 0.077,
+        "std": 0.069,
+        "n": 5
+      },
+      "response_latency_s": {
+        "mean": 3.147,
+        "std": 0.007,
+        "n": 5
+      }
+    }
+  },
+  "comparisons_vs_full": {
+    "full_vs_no_classifier__baseline": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_no_retrieval__baseline": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_no_weak_retrieval__baseline": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_no_memory__baseline": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_no_evaluator_loop__baseline": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_plain_llm__baseline": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_no_classifier__personalized": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_no_retrieval__personalized": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_no_weak_retrieval__personalized": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_no_memory__personalized": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_no_evaluator_loop__personalized": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    },
+    "full_vs_plain_llm__personalized": {
+      "mean_delta_overall_score": null,
+      "t_statistic": null,
+      "n_paired": 5,
+      "note": "positive delta = full system scores higher than ablated variant"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+variant,profile,personalization,adaptive_teaching,difficulty_alignment,weak_concept_recall,pedagogical_quality,hallucination_rate,learning_gain,latency_ms
+full,beginner,1.0,0.875,1.0,0.417,1.0,0.0,0.0,0.0175
+full,intermediate,1.0,0.875,1.0,0.375,1.0,0.0,0.0,0.0115
+no_memory,beginner,1.0,0.875,1.0,0.417,1.0,0.0,0.0,0.01
+no_memory,intermediate,1.0,0.875,1.0,0.375,1.0,0.0,0.0,0.01
+plain_llm,beginner,0.0,0.0,1.0,0.0,0.8,0.35,0.0,0.0015
+plain_llm,intermediate,0.0,0.0,1.0,0.0,0.8,0.35,0.0,0.0

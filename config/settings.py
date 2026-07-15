@@ -8,7 +8,12 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.0-flash")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq").strip().lower()
+MODEL_NAME = os.getenv("MODEL_NAME", "llama-3.1-8b-instant")
+JUDGE_PROVIDER = os.getenv("JUDGE_PROVIDER", "openai").strip().lower()
+JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gpt-oss-120b")
 DATASET_FILE = str(BASE_DIR / "datasets" / "data_easy" / "eduagent_dataset_easy_v2.csv")
 CLASSIFIER_PATH = str(BASE_DIR / "models" / "distilbert_eduagent_v2")
 CLASSIFIER_HF_REPO = os.getenv("CLASSIFIER_HF_REPO", "SSneha2005/Eduagent_distilbert")

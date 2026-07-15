@@ -1,0 +1,61 @@
+id,difficulty,question,components
+B1,Beginner,Explain gradient descent to a student learning it for the first time.,C
+B2,Beginner,A student previously misunderstood learning rate. Explain gradient descent focusing on learning rate.,M;W
+B3,Beginner,Explain supervised learning using the retrieved course examples.,R
+B4,Beginner,The learner keeps confusing classification and regression. Explain the difference.,W;M
+B5,Beginner,Explain overfitting with a simple analogy.,C
+B6,Beginner,"Based on previous mistakes, explain why normalization is useful.",M
+B7,Beginner,Explain CNNs using the retrieved examples only.,R
+B8,Beginner,The learner repeatedly confuses precision and recall. Explain recall.,W
+B9,Beginner,Explain activation functions to a beginner.,C
+B10,Beginner,Re-explain backpropagation after a failed quiz attempt.,E;M
+B11,Beginner,Explain train/validation/test split.,R
+B12,Beginner,Explain why data leakage is dangerous.,R
+B13,Beginner,Explain bias vs variance.,C
+B14,Beginner,Explain dropout after the learner failed a quiz.,E
+B15,Beginner,Explain k-NN using retrieved notes.,R
+B16,Beginner,Explain decision trees for a beginner.,C
+B17,Beginner,Explain confusion matrix using previous weak concepts.,W;M
+B18,Beginner,Explain logistic regression simply.,C
+B19,Beginner,Explain feature scaling with retrieved examples.,R
+B20,Beginner,Give another explanation because the learner still doesn't understand overfitting.,E;M
+I1,Intermediate,Explain why Adam usually converges faster than SGD using retrieved notes.,R
+I2,Intermediate,The learner struggles with chain rule. Explain backpropagation again.,W;M
+I3,Intermediate,Explain transformers using retrieved examples.,R
+I4,Intermediate,Explain self-attention to an intermediate learner.,C
+I5,Intermediate,Explain positional encoding after previous confusion.,W;E
+I6,Intermediate,Compare BatchNorm and LayerNorm.,R
+I7,Intermediate,Explain transfer learning for image classification.,C
+I8,Intermediate,The learner misunderstood fine-tuning. Re-explain.,E;M
+I9,Intermediate,Explain embedding vectors using retrieved examples.,R
+I10,Intermediate,Explain cosine similarity in RAG systems.,R
+I11,Intermediate,Explain vector databases.,R
+I12,Intermediate,Explain why PCA reduces dimensionality.,C
+I13,Intermediate,Explain gradient clipping after repeated mistakes.,W;M
+I14,Intermediate,Explain cross-validation using retrieved notes.,R
+I15,Intermediate,Explain attention score calculation.,R
+I16,Intermediate,Explain precision-recall tradeoff.,W
+I17,Intermediate,Explain L2 regularization.,C
+I18,Intermediate,Explain learning rate scheduling.,W;R
+I19,Intermediate,Explain beam search.,R
+I20,Intermediate,Adapt your explanation because the learner answered incorrectly twice.,E;M
+A1,Advanced,Explain why transformers outperform RNNs for long-context modeling.,C
+A2,Advanced,"Compare LoRA, QLoRA and full fine-tuning.",R
+A3,Advanced,Explain retrieval-augmented generation using the retrieved documentation.,R
+A4,Advanced,The learner struggles with attention heads. Focus only on that weakness.,W;M
+A5,Advanced,Explain policy gradients mathematically.,C
+A6,Advanced,Explain PPO after a failed reinforcement learning assessment.,E
+A7,Advanced,Explain why cosine similarity is preferred in dense retrieval.,R
+A8,Advanced,Explain ANN indexing (FAISS/HNSW).,R
+A9,Advanced,Explain hallucination mitigation in RAG systems.,R
+A10,Advanced,Explain catastrophic forgetting during fine-tuning.,C
+A11,Advanced,Compare dense and sparse retrieval.,R
+A12,Advanced,Explain cross-encoder reranking.,R
+A13,Advanced,The learner repeatedly misinterprets embedding space. Explain again.,W;M
+A14,Advanced,Explain teacher forcing in sequence models.,C
+A15,Advanced,Explain contrastive learning using retrieved references.,R
+A16,Advanced,Explain diffusion model denoising.,C
+A17,Advanced,Explain retrieval chunking strategies.,R
+A18,Advanced,Explain KV-cache optimization.,C
+A19,Advanced,The learner still misunderstands attention masking. Adapt your explanation.,E;M
+A20,Advanced,Explain why hybrid retrieval outperforms pure vector search.,R
